@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Radio, Clock, Calendar, CheckCircle, AlertCircle, Lock } from "lucide-react";
+import { ArrowRight, Radio, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import {
   getInstitutionById,
   getStudentAgenda,
@@ -213,6 +213,13 @@ export default function StudentAgendaPage() {
             <span className="ml-2 text-muted-foreground/50">· {history.length} no histórico</span>
           )}
         </p>
+        <Link
+          href="/aluno/perfil"
+          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-accent hover:opacity-80"
+        >
+          Editar perfil
+          <ArrowRight size={12} />
+        </Link>
       </header>
 
       {agenda.length === 0 ? (

@@ -11,14 +11,20 @@ export type StudentProfile = {
   id: string;
   userId: string;
   preferredInstitutionId?: string;
+  institutionIds: string[];
+  labels: string[];
 };
 
 export type TeacherProfile = {
   id: string;
   userId: string;
   photo: string;
+  photoUrl?: string;
   bio: string;
   headline: string;
+  institutionIds: string[];
+  subjectIds: string[];
+  labels: string[];
   isVerified: boolean;
 };
 
@@ -171,26 +177,36 @@ export const studentProfiles: StudentProfile[] = [
     id: "sp-ana",
     userId: "u-student-ana",
     preferredInstitutionId: "ins-fgv",
+    institutionIds: ["ins-fgv", "ins-mobile"],
+    labels: ["Direito", "Fase 2", "Bolsa"],
   },
   {
     id: "sp-pedro",
     userId: "u-student-pedro",
     preferredInstitutionId: "ins-fgv",
+    institutionIds: ["ins-fgv"],
+    labels: ["Direito", "Simulados"],
   },
   {
     id: "sp-julia",
     userId: "u-student-julia",
     preferredInstitutionId: "ins-fgv",
+    institutionIds: ["ins-fgv", "ins-insper"],
+    labels: ["Economia", "Vestibular"],
   },
   {
     id: "sp-marcos",
     userId: "u-student-marcos",
     preferredInstitutionId: "ins-insper",
+    institutionIds: ["ins-insper"],
+    labels: ["Engenharia", "Calculo"],
   },
   {
     id: "sp-camila",
     userId: "u-student-camila",
     preferredInstitutionId: "ins-fgv",
+    institutionIds: ["ins-fgv", "ins-band"],
+    labels: ["Redacao", "Humanas"],
   },
 ];
 
@@ -199,16 +215,24 @@ export const teacherProfiles: TeacherProfile[] = [
     id: "tp-luiza",
     userId: "u-teacher-luiza",
     photo: "LC",
+    photoUrl: "https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=300&q=80",
     bio: "Ex-aluna de Direito FGV. Coordena grupos de argumentacao para provas orais e estudos de caso.",
     headline: "Direito e redacao argumentativa",
+    institutionIds: ["ins-fgv", "ins-mobile"],
+    subjectIds: ["sub-direito", "sub-redacao"],
+    labels: ["Direito", "Oratoria", "Fase 2"],
     isVerified: true,
   },
   {
     id: "tp-rafael",
     userId: "u-teacher-rafael",
     photo: "RP",
+    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
     bio: "Ex-insper com foco em calculo e estatistica aplicada para graduacao e vestibulares concorridos.",
     headline: "Calculo, estatistica e raciocinio quantitativo",
+    institutionIds: ["ins-insper", "ins-inteli", "ins-mobile"],
+    subjectIds: ["sub-calculo", "sub-fisica", "sub-estatistica"],
+    labels: ["Calculo", "Dados", "Graduacao"],
     isVerified: true,
   },
   {
@@ -217,6 +241,9 @@ export const teacherProfiles: TeacherProfile[] = [
     photo: "CM",
     bio: "Engenheiro com mestrado em Matematica Aplicada. Especialista em preparacao para vestibulares de alta concorrencia com foco em resolucao de problemas.",
     headline: "Matematica e ciencias exatas",
+    institutionIds: ["ins-mobile", "ins-band", "ins-vertice"],
+    subjectIds: ["sub-matematica", "sub-fisica", "sub-quimica"],
+    labels: ["Exatas", "Vestibular", "Lista guiada"],
     isVerified: true,
   },
   {
@@ -225,6 +252,9 @@ export const teacherProfiles: TeacherProfile[] = [
     photo: "MS",
     bio: "Mestre em Letras pela USP. Especialista em redacao dissertativa e analise literaria para FUVEST e ENEM.",
     headline: "Lingua portuguesa e literatura",
+    institutionIds: ["ins-mobile", "ins-band"],
+    subjectIds: ["sub-portugues", "sub-literatura", "sub-redacao"],
+    labels: ["Letras", "Correcao", "FUVEST"],
     isVerified: false,
   },
   {
@@ -233,6 +263,9 @@ export const teacherProfiles: TeacherProfile[] = [
     photo: "BL",
     bio: "Doutoranda em Biologia Molecular. Ensina ciencias da natureza com abordagem pratica e contextualizada.",
     headline: "Biologia e quimica para vestibulares",
+    institutionIds: ["ins-mobile", "ins-vertice"],
+    subjectIds: ["sub-biologia", "sub-quimica", "sub-historia"],
+    labels: ["Natureza", "Mapas mentais", "Vestibular"],
     isVerified: true,
   },
 ];
@@ -833,6 +866,18 @@ export function getInstitutionById(institutionId: string) {
 
 export function getSubjectById(subjectId: string) {
   return subjects.find((subject) => subject.id === subjectId);
+}
+
+export function getInstitutionsByIds(institutionIds: string[]) {
+  return institutionIds
+    .map((institutionId) => getInstitutionById(institutionId))
+    .filter((institution): institution is Institution => Boolean(institution));
+}
+
+export function getSubjectsByIds(subjectIds: string[]) {
+  return subjectIds
+    .map((subjectId) => getSubjectById(subjectId))
+    .filter((subject): subject is Subject => Boolean(subject));
 }
 
 export function getTeacherById(teacherProfileId: string) {

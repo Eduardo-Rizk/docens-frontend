@@ -53,6 +53,7 @@ export default async function SubjectPage({ params }: PageProps) {
     return {
       id: teacher.id,
       photo: teacher.photo,
+      photoUrl: teacher.photoUrl,
       headline: teacher.headline,
       bio: teacher.bio,
       isVerified: teacher.isVerified,

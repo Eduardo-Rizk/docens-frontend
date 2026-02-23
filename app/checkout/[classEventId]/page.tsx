@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Calendar, Clock, Timer, ShieldCheck, BadgeCheck } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
 import { StatusPill } from "@/components/status-pill";
+import { TeacherAvatar } from "@/components/TeacherAvatar";
 import { PayButton } from "./PayButton";
 import {
   getClassEventById,
@@ -96,9 +97,12 @@ export default async function CheckoutPage({ params }: PageProps) {
               <>
                 <div className="h-px bg-border" />
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-xs font-bold text-cyan-300">
-                    {teacher.photo}
-                  </div>
+                  <TeacherAvatar
+                    initials={teacher.photo}
+                    photoUrl={teacher.photoUrl}
+                    alt={teacherName}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-xs font-bold text-cyan-300"
+                  />
                   <div>
                     <div className="flex items-center gap-1">
                       <p className="text-sm font-semibold text-foreground">{teacherName}</p>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, Calendar, Clock, Timer, Users, ArrowUpRight } from "lucide-react";
 import { SubjectIcon } from "@/components/SubjectIcon";
 import { BackLink } from "@/components/BackLink";
+import { TeacherAvatar } from "@/components/TeacherAvatar";
 import {
   getInstitutionById,
   getSubjectById,
@@ -44,6 +45,9 @@ export default async function TeacherProfilePage({ params }: PageProps) {
   const teacherUser = getUserById(teacher.userId);
   const teacherName = teacherUser?.name ?? teacher.headline;
   const palette = AVATAR_PALETTE[hashIndex(teacher.id, AVATAR_PALETTE.length)];
+  const profileSubjects = teacher.subjectIds
+    .map((subjectId) => getSubjectById(subjectId)?.name)
+    .filter((name): name is string => Boolean(name));
 
   // All published classes for this teacher at this institution, grouped by subject
   const allClasses = getTeacherClasses(teacherProfileId).filter(
@@ -64,11 +68,12 @@ export default async function TeacherProfilePage({ params }: PageProps) {
 
       {/* Teacher header */}
       <header className="flex flex-col gap-6 sm:flex-row sm:items-start">
-        <div
+        <TeacherAvatar
+          initials={teacher.photo}
+          photoUrl={teacher.photoUrl}
+          alt={teacherName}
           className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-sm border text-xl font-bold ${palette.cls}`}
-        >
-          {teacher.photo}
-        </div>
+        />
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -87,6 +92,25 @@ export default async function TeacherProfilePage({ params }: PageProps) {
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             {teacher.bio}
           </p>
+
+          <div className="flex flex-wrap gap-1.5">
+            {teacher.labels.map((tag) => (
+              <span
+                key={tag}
+                className="border border-brand-accent/25 bg-brand-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-brand-accent"
+              >
+                {tag}
+              </span>
+            ))}
+            {profileSubjects.map((subjectName) => (
+              <span
+                key={subjectName}
+                className="border border-border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/70"
+              >
+                {subjectName}
+              </span>
+            ))}
+          </div>
 
           <p className="text-xs text-muted-foreground">
             {allClasses.length} aula{allClasses.length !== 1 ? "s" : ""} publicada{allClasses.length !== 1 ? "s" : ""}

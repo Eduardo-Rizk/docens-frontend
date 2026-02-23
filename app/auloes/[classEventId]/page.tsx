@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Calendar, Clock, Timer, Users } from "lucide-react";
 import { StatusPill } from "@/components/status-pill";
-import { SubjectIcon } from "@/components/SubjectIcon";
 import { BackLink } from "@/components/BackLink";
+import { TeacherAvatar } from "@/components/TeacherAvatar";
 import { BuyButton } from "./BuyButton";
 import {
   getClassEventById,
@@ -83,9 +82,12 @@ export default async function ClassEventPage({ params, searchParams }: PageProps
           {/* Teacher card */}
           {teacher && (
             <div className="flex items-start gap-5 rounded-sm border border-border bg-surface p-5">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-sm font-bold text-cyan-300">
-                {teacher.photo}
-              </div>
+              <TeacherAvatar
+                initials={teacher.photo}
+                photoUrl={teacher.photoUrl}
+                alt={teacherUser?.name ?? teacher.headline}
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-sm font-bold text-cyan-300"
+              />
               <div className="min-w-0">
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60">
                   Professor

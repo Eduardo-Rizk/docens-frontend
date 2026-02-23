@@ -5,10 +5,12 @@ import Link from "next/link";
 import { BadgeCheck, Calendar, Clock, ArrowUpRight, Users } from "lucide-react";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 import type { ClassEvent } from "@/lib/domain";
+import { TeacherAvatar } from "@/components/TeacherAvatar";
 
 export type TeacherCardData = {
   id: string;
   photo: string;
+  photoUrl?: string;
   headline: string;
   bio: string;
   isVerified: boolean;
@@ -95,11 +97,12 @@ function TeacherCard({
       <div className="flex flex-1 flex-col gap-5 p-6">
         {/* ── Teacher identity (links to profile) ─── */}
         <Link href={profileHref} className="flex items-start gap-4">
-          <div
+          <TeacherAvatar
+            initials={teacher.photo}
+            photoUrl={teacher.photoUrl}
+            alt={teacher.userName}
             className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border text-sm font-bold ${teacher.avatarColor}`}
-          >
-            {teacher.photo}
-          </div>
+          />
 
           <div className="min-w-0 flex-1 pt-0.5">
             <div className="flex items-center gap-1.5">
