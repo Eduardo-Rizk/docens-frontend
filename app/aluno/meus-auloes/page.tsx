@@ -1,53 +1,33 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Radio, CheckCircle, AlertCircle, Lock } from "lucide-react";
-import {
-  getInstitutionById,
-  getStudentAgenda,
-  getStudentAccessState,
-  getTeacherById,
-  getUserById,
-  viewer,
-} from "@/lib/domain";
-import type { ClassEvent, Enrollment } from "@/lib/domain";
+import { useStudentAgenda, type AgendaItem } from "@/lib/queries/student";
 import { formatLongDate, formatTime } from "@/lib/format";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function isLiveNow(e: ClassEvent) {
-  const start = new Date(e.startsAt).getTime();
-  const end = start + e.durationMin * 60 * 1000;
-  const now = Date.now();
-  return now >= start && now <= end;
-}
-
-function isPast(e: ClassEvent) {
-  const end = new Date(e.startsAt).getTime() + e.durationMin * 60 * 1000;
-  return Date.now() > end;
-}
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
+// --- Status badge ---
 
 type AccessState = "NEEDS_PURCHASE" | "PENDING_PAYMENT" | "WAITING_RELEASE" | "CAN_ENTER";
 
 function StatusBadge({
   access,
-  past,
-  live,
+  isLive,
+  isPast,
 }: {
   access: AccessState;
-  past: boolean;
-  live: boolean;
+  isLive: boolean;
+  isPast: boolean;
 }) {
-  if (past) {
+  if (isPast) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
         <CheckCircle size={10} />
-        Concluída
+        Concluida
       </span>
     );
   }
 
-  if (live && access === "CAN_ENTER") {
+  if (isLive && access === "CAN_ENTER") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-sm border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400">
         <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
@@ -65,7 +45,7 @@ function StatusBadge({
         </span>
         <span className="flex items-center gap-1 text-[9px] text-muted-foreground/50">
           <Lock size={8} />
-          link libera no horário
+          link libera no horario
         </span>
       </div>
     );
@@ -92,29 +72,37 @@ function StatusBadge({
   return null;
 }
 
-// ─── Class row ────────────────────────────────────────────────────────────────
+// --- Class row ---
+
+function isLiveNow(startsAt: string, durationMin: number) {
+  const start = new Date(startsAt).getTime();
+  const end = start + durationMin * 60 * 1000;
+  const now = Date.now();
+  return now >= start && now <= end;
+}
+
+function isEventPast(startsAt: string, durationMin: number) {
+  const end = new Date(startsAt).getTime() + durationMin * 60 * 1000;
+  return Date.now() > end;
+}
 
 function ClassRow({
-  enrollment,
-  classEvent,
-  muted = false,
+  item,
+  section,
 }: {
-  enrollment: Enrollment;
-  classEvent: ClassEvent;
-  muted?: boolean;
+  item: AgendaItem;
+  section: "live" | "upcoming" | "history";
 }) {
-  const institution = getInstitutionById(classEvent.institutionId);
-  const teacher = getTeacherById(classEvent.teacherProfileId);
-  const teacherUser = teacher ? getUserById(teacher.userId) : undefined;
-  const teacherName = teacherUser?.name ?? teacher?.headline ?? "";
-  const live = isLiveNow(classEvent);
-  const past = isPast(classEvent);
-  const access = getStudentAccessState({ classEvent, enrollment }) as AccessState;
+  const ce = item.classEvent;
+  const live = section === "live";
+  const past = section === "history";
+  const access = item.accessState;
   const confirmed = access === "WAITING_RELEASE" || access === "CAN_ENTER";
+  const muted = past;
 
   return (
     <Link
-      href={`/auloes/${classEvent.id}?from=agenda`}
+      href={`/auloes/${ce.id}?from=agenda`}
       className={`group relative flex flex-col gap-4 overflow-hidden rounded-sm border p-5 transition-all duration-150 sm:flex-row sm:items-center sm:gap-6 ${
         live
           ? "border-red-500/30 bg-red-500/5 hover:border-red-500/50"
@@ -125,7 +113,6 @@ function ClassRow({
           : "border-border bg-surface hover:border-zinc-700 hover:bg-zinc-900/60"
       }`}
     >
-      {/* Left accent stripe for confirmed classes */}
       {confirmed && !live && (
         <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand-accent/60 via-brand-accent/30 to-transparent" />
       )}
@@ -133,36 +120,35 @@ function ClassRow({
       {/* Date/time column */}
       <div className={`w-28 shrink-0 space-y-0.5 ${muted ? "opacity-50" : ""}`}>
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">
-          {formatLongDate(classEvent.startsAt).split(",")[0]}
+          {formatLongDate(ce.startsAt).split(",")[0]}
         </p>
         <p className={`font-display text-2xl leading-none ${confirmed && !muted ? "text-brand-accent" : "text-foreground"}`}>
-          {formatTime(classEvent.startsAt)}
+          {formatTime(ce.startsAt)}
         </p>
         <p className="text-[11px] text-muted-foreground">
-          {formatLongDate(classEvent.startsAt).split(",").slice(1).join(",").trim()}
+          {formatLongDate(ce.startsAt).split(",").slice(1).join(",").trim()}
         </p>
       </div>
 
-      {/* Divider */}
       <div className={`hidden h-12 w-px sm:block ${live ? "bg-red-500/20" : "bg-border"}`} />
 
       {/* Info */}
       <div className="min-w-0 flex-1 space-y-1">
         <p className={`font-display text-lg leading-snug ${muted ? "text-muted-foreground" : "text-foreground"}`}>
-          {classEvent.title}
+          {ce.title}
         </p>
         <p className="text-xs text-muted-foreground">
-          {institution?.shortName}
-          {teacherName && (
-            <> · <span className="text-muted-foreground/70">{teacherName}</span></>
+          {ce.institution?.shortName}
+          {ce.teacherProfile?.user?.name && (
+            <> . <span className="text-muted-foreground/70">{ce.teacherProfile.user.name}</span></>
           )}
-          <span className="ml-2 text-muted-foreground/50">· {classEvent.durationMin} min</span>
+          <span className="ml-2 text-muted-foreground/50">. {ce.durationMin} min</span>
         </p>
       </div>
 
       {/* Status + arrow */}
       <div className="flex shrink-0 items-center gap-3">
-        <StatusBadge access={access} past={past} live={live} />
+        <StatusBadge access={access} isLive={live} isPast={past} />
         <ArrowRight
           size={14}
           className="text-muted-foreground/30 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-brand-accent"
@@ -172,7 +158,7 @@ function ClassRow({
   );
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
+// --- Section header ---
 
 function SectionHeader({ label, count }: { label: string; count: number }) {
   return (
@@ -188,29 +174,45 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---
 
 export default function StudentAgendaPage() {
-  const agenda = getStudentAgenda(viewer.studentProfileId);
+  const { data: agenda, isLoading } = useStudentAgenda();
 
-  const live = agenda.filter(({ classEvent }) => isLiveNow(classEvent));
-  const upcoming = agenda.filter(({ classEvent }) => !isPast(classEvent) && !isLiveNow(classEvent));
-  const history = agenda.filter(({ classEvent }) => isPast(classEvent)).reverse();
+  if (isLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="space-y-3">
+          <div className="h-3 w-20 bg-zinc-800 rounded" />
+          <div className="h-10 w-48 bg-zinc-800 rounded" />
+          <div className="h-4 w-60 bg-zinc-800 rounded" />
+        </div>
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-zinc-800 rounded-sm" />
+        ))}
+      </div>
+    );
+  }
+
+  const live = agenda?.live ?? [];
+  const upcoming = agenda?.upcoming ?? [];
+  const history = agenda?.history ?? [];
+  const totalActive = live.length + upcoming.length;
 
   return (
     <div className="space-y-12">
       {/* Header */}
       <header className="space-y-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-accent">
-          Área do Aluno
+          Area do Aluno
         </p>
         <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
           Minha Agenda
         </h1>
         <p className="text-base text-muted-foreground">
-          {upcoming.length + live.length} aula{upcoming.length + live.length !== 1 ? "s" : ""} agendada{upcoming.length + live.length !== 1 ? "s" : ""}
+          {totalActive} aula{totalActive !== 1 ? "s" : ""} agendada{totalActive !== 1 ? "s" : ""}
           {history.length > 0 && (
-            <span className="ml-2 text-muted-foreground/50">· {history.length} no histórico</span>
+            <span className="ml-2 text-muted-foreground/50">. {history.length} no historico</span>
           )}
         </p>
         <Link
@@ -222,24 +224,24 @@ export default function StudentAgendaPage() {
         </Link>
       </header>
 
-      {agenda.length === 0 ? (
+      {live.length === 0 && upcoming.length === 0 && history.length === 0 ? (
         <div className="rounded-sm border border-border bg-surface p-12 text-center">
           <p className="font-display text-2xl text-foreground">Nenhuma aula comprada</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Explore as instituições e garanta sua vaga em uma aula.
+            Explore as instituicoes e garanta sua vaga em uma aula.
           </p>
           <Link
             href="/explorar"
             className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-accent hover:opacity-70"
           >
-            Explorar instituições
+            Explorar instituicoes
             <ArrowRight size={14} />
           </Link>
         </div>
       ) : (
         <div className="space-y-10">
 
-          {/* ── Ao vivo agora ─────────────────────── */}
+          {/* Ao vivo agora */}
           {live.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center gap-3">
@@ -250,32 +252,32 @@ export default function StudentAgendaPage() {
                 <div className="flex-1 h-px bg-red-500/20" />
               </div>
               <div className="flex flex-col gap-2">
-                {live.map(({ enrollment, classEvent }) => (
-                  <ClassRow key={enrollment.id} enrollment={enrollment} classEvent={classEvent} />
+                {live.map((item) => (
+                  <ClassRow key={item.classEvent.id} item={item} section="live" />
                 ))}
               </div>
             </section>
           )}
 
-          {/* ── Próximas aulas ────────────────────── */}
+          {/* Proximas aulas */}
           {upcoming.length > 0 && (
             <section className="space-y-3">
-              <SectionHeader label="Próximas aulas" count={upcoming.length} />
+              <SectionHeader label="Proximas aulas" count={upcoming.length} />
               <div className="flex flex-col gap-2">
-                {upcoming.map(({ enrollment, classEvent }) => (
-                  <ClassRow key={enrollment.id} enrollment={enrollment} classEvent={classEvent} />
+                {upcoming.map((item) => (
+                  <ClassRow key={item.classEvent.id} item={item} section="upcoming" />
                 ))}
               </div>
             </section>
           )}
 
-          {/* ── Histórico ─────────────────────────── */}
+          {/* Historico */}
           {history.length > 0 && (
             <section className="space-y-3">
-              <SectionHeader label="Histórico" count={history.length} />
+              <SectionHeader label="Historico" count={history.length} />
               <div className="flex flex-col gap-2">
-                {history.map(({ enrollment, classEvent }) => (
-                  <ClassRow key={enrollment.id} enrollment={enrollment} classEvent={classEvent} muted />
+                {history.map((item) => (
+                  <ClassRow key={item.classEvent.id} item={item} section="history" />
                 ))}
               </div>
             </section>

@@ -1,38 +1,50 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { use } from "react";
 import { Calendar, Clock } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
 import { StatusPill } from "@/components/status-pill";
-import {
-  getBuyerList,
-  getClassEventById,
-  getInstitutionById,
-  getSubjectById,
-} from "@/lib/domain";
+import { useBuyerList } from "@/lib/queries/teacher";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
 type PageProps = {
   params: Promise<{ classEventId: string }>;
 };
 
-export default async function CompradoresPage({ params }: PageProps) {
-  const { classEventId } = await params;
-  const classEvent = getClassEventById(classEventId);
+export default function CompradoresPage({ params }: PageProps) {
+  const { classEventId } = use(params);
+  const { data, isLoading } = useBuyerList(classEventId);
 
-  if (!classEvent) notFound();
+  if (isLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="space-y-3">
+          <div className="h-3 w-40 bg-zinc-800 rounded" />
+          <div className="h-8 w-80 bg-zinc-800 rounded" />
+          <div className="h-4 w-48 bg-zinc-800 rounded" />
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-16 bg-zinc-800 rounded-sm" />
+        ))}
+      </div>
+    );
+  }
 
-  const institution = getInstitutionById(classEvent.institutionId);
-  const subject = getSubjectById(classEvent.subjectId);
-  const buyers = getBuyerList(classEventId);
-  const paidCount = buyers.filter((b) => b.enrollment.status === "PAID").length;
+  if (!data) {
+    return <div className="p-8 text-zinc-400">Dados nao encontrados.</div>;
+  }
+
+  const { classEvent, institution, subject, paidCount, buyers } = data;
 
   return (
     <div className="space-y-8">
-      <BackLink href="/professor/auloes" label="Meus Aulões" />
+      <BackLink href="/professor/auloes" label="Meus Auloes" />
 
       {/* Class info header */}
       <div className="space-y-2">
         <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-          {institution?.shortName} · {subject?.name}
+          {institution?.shortName} . {subject?.name}
         </p>
         <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
           {classEvent.title}
@@ -66,7 +78,7 @@ export default async function CompradoresPage({ params }: PageProps) {
             Nenhum comprador ainda
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Os alunos aparecerão aqui após realizar a compra.
+            Os alunos aparecerao aqui apos realizar a compra.
           </p>
         </div>
       ) : (
@@ -99,10 +111,10 @@ export default async function CompradoresPage({ params }: PageProps) {
                 <div className="flex shrink-0 items-center gap-3">
                   <div className="text-right">
                     <p className="text-sm tabular-nums text-foreground">
-                      {payment ? formatPrice(payment.amountCents) : "—"}
+                      {payment ? formatPrice(payment.amountCents) : "--"}
                     </p>
                     <p className="text-[10px] text-muted-foreground/60">
-                      {payment?.provider ?? "—"}
+                      {payment?.provider ?? "--"}
                     </p>
                   </div>
                   <StatusPill tone={enrollment.status === "PAID" ? "success" : "warn"}>

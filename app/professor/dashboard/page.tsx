@@ -1,22 +1,42 @@
+"use client";
+
 import Link from "next/link";
 import { TrendingUp, Users, BookOpen, Radio } from "lucide-react";
 import { StatusPill } from "@/components/status-pill";
-import {
-  getInstitutionById,
-  getSubjectById,
-  getTeacherDashboard,
-  viewer,
-} from "@/lib/domain";
+import { useTeacherDashboard } from "@/lib/queries/teacher";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
-const publicationConfig = {
-  DRAFT: { label: "Rascunho", tone: "muted" as const },
-  PUBLISHED: { label: "Publicado", tone: "default" as const },
-  FINISHED: { label: "Finalizado", tone: "success" as const },
+const publicationConfig: Record<string, { label: string; tone: "muted" | "default" | "success" }> = {
+  DRAFT: { label: "Rascunho", tone: "muted" },
+  PUBLISHED: { label: "Publicado", tone: "default" },
+  FINISHED: { label: "Finalizado", tone: "success" },
 };
 
 export default function TeacherDashboardPage() {
-  const dashboard = getTeacherDashboard(viewer.teacherProfileId);
+  const { data: dashboard, isLoading } = useTeacherDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="space-y-3">
+          <div className="h-10 w-48 bg-zinc-800 rounded" />
+          <div className="h-4 w-64 bg-zinc-800 rounded" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-zinc-800 rounded-sm" />
+          ))}
+        </div>
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-24 bg-zinc-800 rounded-sm" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return <div className="p-8 text-zinc-400">Dashboard nao disponivel.</div>;
+  }
 
   return (
     <div className="space-y-10">
@@ -26,7 +46,7 @@ export default function TeacherDashboardPage() {
           Dashboard
         </h1>
         <p className="text-base text-muted-foreground">
-          Visão geral da sua atividade como professor
+          Visao geral da sua atividade como professor
         </p>
       </header>
 
@@ -58,7 +78,7 @@ export default function TeacherDashboardPage() {
             {dashboard.totalPaidStudents}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            matrículas pagas no total
+            matriculas pagas no total
           </p>
         </div>
 
@@ -66,7 +86,7 @@ export default function TeacherDashboardPage() {
           <div className="flex items-center gap-2">
             <BookOpen size={14} className="text-brand-accent" />
             <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Aulões criados
+              Auloes criados
             </p>
           </div>
           <p className="mt-3 font-display text-4xl text-foreground">
@@ -97,16 +117,14 @@ export default function TeacherDashboardPage() {
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-            Aulões · Desempenho
+            Auloes . Desempenho
           </p>
           <div className="h-px flex-1 bg-border/60" />
         </div>
 
         <div className="flex flex-col gap-2">
-          {dashboard.rows.map(({ classEvent, paidEnrollments, revenueSucceededCents }) => {
-            const institution = getInstitutionById(classEvent.institutionId);
-            const subject = getSubjectById(classEvent.subjectId);
-            const pub = publicationConfig[classEvent.publicationStatus];
+          {dashboard.rows.map(({ classEvent, institution, subject, paidEnrollments, revenueSucceededCents }) => {
+            const pub = publicationConfig[classEvent.publicationStatus] ?? publicationConfig.DRAFT;
 
             return (
               <div
@@ -131,7 +149,7 @@ export default function TeacherDashboardPage() {
                     {classEvent.title}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {institution?.shortName} · {subject?.name}
+                    {institution?.shortName} . {subject?.name}
                   </p>
                 </div>
 

@@ -1,20 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BadgeCheck, CheckCircle } from "lucide-react";
-import {
-  getInstitutionById,
-  getSubjectById,
-  getTeacherById,
-  getUserById,
-  institutions,
-  subjects,
-  viewer,
-} from "@/lib/domain";
+import { CheckCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
+import { useUpdateTeacherProfile } from "@/lib/queries/teacher";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
-
-const teacher = getTeacherById(viewer.teacherProfileId)!;
-const user = getUserById(teacher.userId)!;
 
 function toggleId(ids: string[], id: string) {
   if (ids.includes(id)) {
@@ -24,42 +15,32 @@ function toggleId(ids: string[], id: string) {
 }
 
 export default function TeacherPerfilPage() {
-  const [photo, setPhoto] = useState(teacher.photo);
-  const [photoUrl, setPhotoUrl] = useState<string | undefined>(teacher.photoUrl);
-  const [headline, setHeadline] = useState(teacher.headline);
-  const [bio, setBio] = useState(teacher.bio);
-  const [institutionIds, setInstitutionIds] = useState(teacher.institutionIds);
-  const [subjectIds, setSubjectIds] = useState(teacher.subjectIds);
-  const [labels, setLabels] = useState(teacher.labels);
-  const [labelInput, setLabelInput] = useState("");
-  const [saved, setSaved] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
+  const { data: institutions } = useInstitutions();
+  const { data: subjects } = useSubjects();
+  const updateProfile = useUpdateTeacherProfile();
+
+  const [bio, setBio] = useState("");
+  const [institutionIds, setInstitutionIds] = useState<string[]>([]);
+  const [subjectIds, setSubjectIds] = useState<string[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
+
+  const initials = user?.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() ?? "??";
+
   const selectedInstitutionNames = useMemo(
     () =>
       institutionIds
-        .map((institutionId) => getInstitutionById(institutionId)?.shortName)
+        .map((id) => (institutions ?? []).find(i => i.id === id)?.shortName)
         .filter((shortName): shortName is string => Boolean(shortName)),
-    [institutionIds],
+    [institutionIds, institutions],
   );
   const selectedSubjectNames = useMemo(
     () =>
       subjectIds
-        .map((subjectId) => getSubjectById(subjectId)?.name)
+        .map((id) => (subjects ?? []).find(s => s.id === id)?.name)
         .filter((name): name is string => Boolean(name)),
-    [subjectIds],
+    [subjectIds, subjects],
   );
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  }
-
-  function addLabel() {
-    const normalized = labelInput.trim();
-    if (!normalized || labels.includes(normalized)) return;
-    setLabels((prev) => [...prev, normalized]);
-    setLabelInput("");
-  }
 
   function handlePhotoChange(file: File | undefined) {
     if (!file) return;
@@ -78,6 +59,38 @@ export default function TeacherPerfilPage() {
     };
   }, [photoUrl]);
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    updateProfile.mutate({
+      bio,
+      institutionIds,
+      subjectIds,
+    });
+  }
+
+  if (authLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="space-y-3">
+          <div className="h-10 w-32 bg-zinc-800 rounded" />
+          <div className="h-4 w-64 bg-zinc-800 rounded" />
+        </div>
+        <div className="grid gap-8 lg:grid-cols-[1fr,340px]">
+          <div className="space-y-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-16 bg-zinc-800 rounded" />
+            ))}
+          </div>
+          <div className="h-64 bg-zinc-800 rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <div className="p-8 text-zinc-400">Perfil nao encontrado.</div>;
+  }
+
   return (
     <div className="space-y-10">
       <header className="space-y-1">
@@ -85,7 +98,7 @@ export default function TeacherPerfilPage() {
           Perfil
         </h1>
         <p className="text-base text-muted-foreground">
-          Informações exibidas para alunos nas páginas de aula
+          Informacoes exibidas para alunos nas paginas de aula
         </p>
       </header>
 
@@ -95,24 +108,24 @@ export default function TeacherPerfilPage() {
           {/* Nome (read-only) */}
           <div className="space-y-2">
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Nome de exibição
+              Nome de exibicao
             </label>
             <div className="flex items-center gap-3 rounded-sm border border-border/50 bg-surface/40 px-4 py-3">
               <p className="text-sm text-foreground">{user.name}</p>
               <span className="ml-auto text-[10px] text-muted-foreground/50">
-                não editável
+                nao editavel
               </span>
             </div>
           </div>
 
-          {/* Foto / Iniciais */}
+          {/* Foto */}
           <div className="space-y-2">
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
               Foto de perfil
             </label>
             <div className="flex items-center gap-4 rounded-sm border border-border bg-surface px-4 py-3">
               <TeacherAvatar
-                initials={photo || "??"}
+                initials={initials}
                 photoUrl={photoUrl}
                 alt={user.name}
                 className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-sm font-bold text-cyan-300"
@@ -127,32 +140,13 @@ export default function TeacherPerfilPage() {
             </div>
           </div>
 
-          {/* Avatar fallback */}
-          <div className="space-y-2">
-            <label
-              htmlFor="photo"
-              className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60"
-            >
-              Iniciais (fallback)
-            </label>
-            <input
-              id="photo"
-              type="text"
-              maxLength={2}
-              value={photo}
-              onChange={(e) => setPhoto(e.target.value.toUpperCase())}
-              className="w-full rounded-sm border border-border bg-surface px-4 py-3 text-sm font-bold uppercase tracking-widest text-foreground placeholder:text-muted-foreground/50 focus:border-brand-accent/40 focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
-              placeholder="Ex: LC"
-            />
-          </div>
-
-          {/* Instituições */}
+          {/* Instituicoes */}
           <div className="space-y-2">
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Instituições em que leciona
+              Instituicoes em que leciona
             </label>
             <div className="flex flex-wrap gap-2">
-              {institutions.map((institution) => {
+              {(institutions ?? []).map((institution) => {
                 const active = institutionIds.includes(institution.id);
                 return (
                   <button
@@ -174,13 +168,13 @@ export default function TeacherPerfilPage() {
             </div>
           </div>
 
-          {/* Matérias */}
+          {/* Materias */}
           <div className="space-y-2">
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Matérias
+              Materias
             </label>
             <div className="flex flex-wrap gap-2">
-              {subjects.map((subject) => {
+              {(subjects ?? []).map((subject) => {
                 const active = subjectIds.includes(subject.id);
                 return (
                   <button
@@ -200,73 +194,6 @@ export default function TeacherPerfilPage() {
             </div>
           </div>
 
-          {/* Labels */}
-          <div className="space-y-2">
-            <label
-              htmlFor="labels"
-              className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60"
-            >
-              Labels
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="labels"
-                type="text"
-                value={labelInput}
-                onChange={(e) => setLabelInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    addLabel();
-                  }
-                }}
-                className="w-full rounded-sm border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-brand-accent/40 focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
-                placeholder="Ex: FUVEST, Cálculo, Argumentação"
-              />
-              <button
-                type="button"
-                onClick={addLabel}
-                className="border border-border px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
-              >
-                Add
-              </button>
-            </div>
-            {labels.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {labels.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() =>
-                      setLabels((prev) => prev.filter((entry) => entry !== tag))
-                    }
-                    className="border border-brand-accent/30 bg-brand-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-brand-accent"
-                  >
-                    {tag} ×
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Headline */}
-          <div className="space-y-2">
-            <label
-              htmlFor="headline"
-              className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60"
-            >
-              Especialidade
-            </label>
-            <input
-              id="headline"
-              type="text"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              className="w-full rounded-sm border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-brand-accent/40 focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
-              placeholder="Ex: Direito e redação argumentativa"
-            />
-          </div>
-
           {/* Bio */}
           <div className="space-y-2">
             <label
@@ -281,21 +208,24 @@ export default function TeacherPerfilPage() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               className="w-full resize-none rounded-sm border border-border bg-surface px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:border-brand-accent/40 focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
-              placeholder="Descreva sua formação e experiência..."
+              placeholder="Descreva sua formacao e experiencia..."
             />
           </div>
 
           <button
             type="submit"
-            className="flex items-center gap-2 rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110"
+            disabled={updateProfile.isPending}
+            className="flex items-center gap-2 rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 disabled:opacity-50"
           >
-            {saved ? (
+            {updateProfile.isSuccess ? (
               <>
                 <CheckCircle size={14} />
                 Salvo
               </>
+            ) : updateProfile.isPending ? (
+              "Salvando..."
             ) : (
-              "Salvar alterações"
+              "Salvar alteracoes"
             )}
           </button>
         </form>
@@ -303,11 +233,11 @@ export default function TeacherPerfilPage() {
         {/* Live preview */}
         <div className="space-y-3">
           <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-            Pré-visualização
+            Pre-visualizacao
           </p>
           <div className="flex items-start gap-5 rounded-sm border border-border bg-surface p-5">
             <TeacherAvatar
-              initials={photo || "??"}
+              initials={initials}
               photoUrl={photoUrl}
               alt={user.name}
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-sm font-bold text-cyan-300"
@@ -316,17 +246,9 @@ export default function TeacherPerfilPage() {
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60">
                 Professor
               </p>
-              <div className="flex items-center gap-1.5">
-                <p className="font-display text-xl text-foreground">{user.name}</p>
-                {teacher.isVerified && (
-                  <BadgeCheck size={16} className="shrink-0 text-brand-accent" />
-                )}
-              </div>
-              <p className="mt-0.5 text-xs font-medium text-brand-accent/80">
-                {headline || "Especialidade"}
-              </p>
+              <p className="font-display text-xl text-foreground">{user.name}</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {bio || "Sua bio aparecerá aqui."}
+                {bio || "Sua bio aparecera aqui."}
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {selectedInstitutionNames.map((institutionName) => (
@@ -345,19 +267,11 @@ export default function TeacherPerfilPage() {
                     {subjectName}
                   </span>
                 ))}
-                {labels.map((tag) => (
-                  <span
-                    key={tag}
-                    className="border border-zinc-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-zinc-300"
-                  >
-                    {tag}
-                  </span>
-                ))}
               </div>
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground/40">
-            Assim os alunos veem seu card nas páginas de aulão
+            Assim os alunos veem seu card nas paginas de aulao
           </p>
         </div>
       </div>

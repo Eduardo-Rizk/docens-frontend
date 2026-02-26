@@ -1,38 +1,46 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { CheckCircle, Calendar, Clock, ArrowRight, CalendarDays } from "lucide-react";
-import {
-  getClassEventById,
-  getInstitutionById,
-  getSubjectById,
-  getTeacherById,
-  getUserById,
-} from "@/lib/domain";
+import { useClassEvent } from "@/lib/queries/class-events";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
 type PageProps = {
   params: Promise<{ classEventId: string }>;
 };
 
-export default async function CheckoutSuccessPage({ params }: PageProps) {
-  const { classEventId } = await params;
-  const classEvent = getClassEventById(classEventId);
+export default function CheckoutSuccessPage({ params }: PageProps) {
+  const { classEventId } = use(params);
+  const { data: classEvent, isLoading } = useClassEvent(classEventId);
 
-  if (!classEvent) notFound();
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="animate-pulse space-y-6 w-full max-w-lg">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-16 w-16 bg-zinc-800 rounded-full" />
+            <div className="h-8 w-64 bg-zinc-800 rounded" />
+            <div className="h-4 w-48 bg-zinc-800 rounded" />
+          </div>
+          <div className="h-48 bg-zinc-800 rounded" />
+        </div>
+      </div>
+    );
+  }
 
-  const institution = getInstitutionById(classEvent.institutionId);
-  const subject = getSubjectById(classEvent.subjectId);
-  const teacher = getTeacherById(classEvent.teacherProfileId);
-  const teacherUser = teacher ? getUserById(teacher.userId) : undefined;
-  const teacherName = teacherUser?.name ?? teacher?.headline ?? "";
+  if (!classEvent) {
+    return <div className="p-8 text-zinc-400">Aula nao encontrada.</div>;
+  }
+
+  const teacherName = classEvent.teacherProfile?.user?.name ?? "";
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center py-16">
       <div className="w-full max-w-lg space-y-8">
 
-        {/* ── Success indicator ─────────────────────── */}
+        {/* Success indicator */}
         <div className="flex flex-col items-center gap-4 text-center">
-          {/* Icon with glow */}
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl" />
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
@@ -45,16 +53,16 @@ export default async function CheckoutSuccessPage({ params }: PageProps) {
               Pagamento confirmado!
             </h1>
             <p className="text-base text-muted-foreground">
-              Sua vaga está garantida. Até lá!
+              Sua vaga esta garantida. Ate la!
             </p>
           </div>
         </div>
 
-        {/* ── Class summary card ────────────────────── */}
+        {/* Class summary card */}
         <div className="rounded-sm border border-emerald-500/20 bg-emerald-500/[0.04] p-6 space-y-4">
           <div className="space-y-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-400/70">
-              {institution?.shortName} · {subject?.name}
+              {classEvent.institution?.shortName} . {classEvent.subject?.name}
             </p>
             <p className="font-display text-xl leading-snug text-foreground">
               {classEvent.title}
@@ -85,13 +93,13 @@ export default async function CheckoutSuccessPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* ── Info ─────────────────────────────────── */}
+        {/* Info */}
         <p className="text-center text-xs leading-relaxed text-muted-foreground">
-          O link de acesso à aula será liberado pelo professor no horário do encontro.
-          Você encontra tudo em <span className="text-foreground font-medium">Minha Agenda</span>.
+          O link de acesso a aula sera liberado pelo professor no horario do encontro.
+          Voce encontra tudo em <span className="text-foreground font-medium">Minha Agenda</span>.
         </p>
 
-        {/* ── CTAs ─────────────────────────────────── */}
+        {/* CTAs */}
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             href="/aluno/meus-auloes"

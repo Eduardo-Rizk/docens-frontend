@@ -2,16 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle } from "lucide-react";
-import {
-  getInstitutionById,
-  getStudentProfileById,
-  getUserById,
-  institutions,
-  viewer,
-} from "@/lib/domain";
-
-const studentProfile = getStudentProfileById(viewer.studentProfileId)!;
-const user = getUserById(studentProfile.userId)!;
+import { useAuth } from "@/lib/auth-context";
+import { useInstitutions } from "@/lib/queries/institutions";
+import { useUpdateStudentProfile } from "@/lib/queries/student";
 
 function toggleId(ids: string[], id: string) {
   if (ids.includes(id)) {
@@ -21,29 +14,56 @@ function toggleId(ids: string[], id: string) {
 }
 
 export default function StudentProfilePage() {
-  const [institutionIds, setInstitutionIds] = useState(studentProfile.institutionIds);
-  const [labels, setLabels] = useState(studentProfile.labels);
-  const [labelInput, setLabelInput] = useState("");
-  const [saved, setSaved] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
+  const { data: institutions, isLoading: instLoading } = useInstitutions();
+  const updateProfile = useUpdateStudentProfile();
+
+  const [institutionIds, setInstitutionIds] = useState<string[]>([]);
+  const [name, setName] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize form from user once loaded
+  if (user && !initialized) {
+    setName(user.name);
+    setInitialized(true);
+  }
+
   const selectedInstitutionNames = useMemo(
     () =>
       institutionIds
-        .map((institutionId) => getInstitutionById(institutionId)?.shortName)
+        .map((institutionId) => (institutions ?? []).find(i => i.id === institutionId)?.shortName)
         .filter((shortName): shortName is string => Boolean(shortName)),
-    [institutionIds],
+    [institutionIds, institutions],
   );
 
-  function addLabel() {
-    const normalized = labelInput.trim();
-    if (!normalized || labels.includes(normalized)) return;
-    setLabels((prev) => [...prev, normalized]);
-    setLabelInput("");
+  if (authLoading || instLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="space-y-3">
+          <div className="h-10 w-64 bg-zinc-800 rounded" />
+          <div className="h-4 w-96 bg-zinc-800 rounded" />
+        </div>
+        <div className="grid gap-8 lg:grid-cols-[1fr,320px]">
+          <div className="space-y-6">
+            <div className="h-16 bg-zinc-800 rounded" />
+            <div className="h-24 bg-zinc-800 rounded" />
+          </div>
+          <div className="h-40 bg-zinc-800 rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <div className="p-8 text-zinc-400">Perfil nao encontrado.</div>;
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    updateProfile.mutate({
+      name,
+      institutionIds,
+    });
   }
 
   return (
@@ -53,7 +73,7 @@ export default function StudentProfilePage() {
           Perfil do Aluno
         </h1>
         <p className="text-base text-muted-foreground">
-          Complete seu perfil com instituições e labels para recomendações melhores.
+          Complete seu perfil com instituicoes para recomendacoes melhores.
         </p>
       </header>
 
@@ -61,22 +81,22 @@ export default function StudentProfilePage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Nome de exibição
+              Nome de exibicao
             </label>
             <div className="flex items-center gap-3 rounded-sm border border-border/50 bg-surface/40 px-4 py-3">
               <p className="text-sm text-foreground">{user.name}</p>
               <span className="ml-auto text-[10px] text-muted-foreground/50">
-                não editável
+                nao editavel
               </span>
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Instituições
+              Instituicoes
             </label>
             <div className="flex flex-wrap gap-2">
-              {institutions.map((institution) => {
+              {(institutions ?? []).map((institution) => {
                 const active = institutionIds.includes(institution.id);
                 return (
                   <button
@@ -98,72 +118,27 @@ export default function StudentProfilePage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label
-              htmlFor="labels"
-              className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60"
-            >
-              Labels
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="labels"
-                type="text"
-                value={labelInput}
-                onChange={(e) => setLabelInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    addLabel();
-                  }
-                }}
-                className="w-full rounded-sm border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-brand-accent/40 focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
-                placeholder="Ex: Medicina, Fase 2, Bolsas"
-              />
-              <button
-                type="button"
-                onClick={addLabel}
-                className="border border-border px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
-              >
-                Add
-              </button>
-            </div>
-            {labels.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {labels.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() =>
-                      setLabels((prev) => prev.filter((entry) => entry !== tag))
-                    }
-                    className="border border-brand-accent/30 bg-brand-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-brand-accent"
-                  >
-                    {tag} ×
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           <button
             type="submit"
-            className="flex items-center gap-2 rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110"
+            disabled={updateProfile.isPending}
+            className="flex items-center gap-2 rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 disabled:opacity-50"
           >
-            {saved ? (
+            {updateProfile.isSuccess ? (
               <>
                 <CheckCircle size={14} />
                 Salvo
               </>
+            ) : updateProfile.isPending ? (
+              "Salvando..."
             ) : (
-              "Salvar alterações"
+              "Salvar alteracoes"
             )}
           </button>
         </form>
 
         <aside className="space-y-3">
           <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-            Pré-visualização
+            Pre-visualizacao
           </p>
           <div className="rounded-sm border border-border bg-surface p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60">
@@ -178,18 +153,10 @@ export default function StudentProfilePage() {
                   {institutionName}
                 </span>
               ))}
-              {labels.map((tag) => (
-                <span
-                  key={tag}
-                  className="border border-brand-accent/30 bg-brand-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-brand-accent"
-                >
-                  {tag}
-                </span>
-              ))}
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground/45">
-            Essas informações ajudam a personalizar recomendações de aulas.
+            Essas informacoes ajudam a personalizar recomendacoes de aulas.
           </p>
         </aside>
       </div>

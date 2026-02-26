@@ -1,49 +1,67 @@
-import { notFound } from "next/navigation";
-import { Calendar, Clock, Timer, ShieldCheck, BadgeCheck } from "lucide-react";
+"use client";
+
+import { use, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Calendar, Clock, Timer, ShieldCheck, Lock } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
 import { StatusPill } from "@/components/status-pill";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
-import { PayButton } from "./PayButton";
-import {
-  getClassEventById,
-  getEnrollmentForStudent,
-  getInstitutionById,
-  getSubjectById,
-  getTeacherById,
-  getUserById,
-  isClassSoldOut,
-  viewer,
-} from "@/lib/domain";
+import { useClassEvent } from "@/lib/queries/class-events";
+import { useCreateEnrollment } from "@/lib/queries/enrollments";
+import { useConfirmPayment } from "@/lib/queries/payments";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
 type PageProps = {
   params: Promise<{ classEventId: string }>;
 };
 
-export default async function CheckoutPage({ params }: PageProps) {
-  const { classEventId } = await params;
-  const classEvent = getClassEventById(classEventId);
+export default function CheckoutPage({ params }: PageProps) {
+  const { classEventId } = use(params);
+  const { data: classEvent, isLoading } = useClassEvent(classEventId);
+  const createEnrollment = useCreateEnrollment();
+  const confirmPayment = useConfirmPayment();
+  const router = useRouter();
+  const [processing, setProcessing] = useState(false);
 
-  if (!classEvent || classEvent.publicationStatus !== "PUBLISHED") {
-    notFound();
+  if (isLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="grid gap-8 lg:grid-cols-[1fr,380px]">
+          <div className="space-y-4">
+            <div className="h-3 w-24 bg-zinc-800 rounded" />
+            <div className="h-8 w-80 bg-zinc-800 rounded" />
+            <div className="h-48 bg-zinc-800 rounded" />
+          </div>
+          <div className="h-64 bg-zinc-800 rounded" />
+        </div>
+      </div>
+    );
   }
 
-  // Already enrolled → redirect logic handled by showing different state
-  const enrollment = getEnrollmentForStudent(classEventId, viewer.studentProfileId);
-  const alreadyEnrolled = !!enrollment;
-  const soldOut = isClassSoldOut(classEvent);
-
-  if (alreadyEnrolled || soldOut) {
-    notFound();
+  if (!classEvent) {
+    return <div className="p-8 text-zinc-400">Aula nao encontrada.</div>;
   }
 
-  const institution = getInstitutionById(classEvent.institutionId);
-  const subject = getSubjectById(classEvent.subjectId);
-  const teacher = getTeacherById(classEvent.teacherProfileId);
-  const teacherUser = teacher ? getUserById(teacher.userId) : undefined;
-  const teacherName = teacherUser?.name ?? teacher?.headline ?? "";
-
+  const teacher = classEvent.teacherProfile;
+  const teacherName = teacher?.user?.name ?? "";
+  const teacherInitials = teacherName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
   const price = formatPrice(classEvent.priceCents);
+
+  async function handlePay() {
+    setProcessing(true);
+    try {
+      // Step 1: Create enrollment
+      const enrollment = await createEnrollment.mutateAsync({ classEventId });
+      // Step 2: Confirm payment
+      await confirmPayment.mutateAsync({ enrollmentId: enrollment.id });
+      // Step 3: Redirect to success
+      router.push(`/checkout/${classEventId}/sucesso`);
+    } catch {
+      // Error handled by mutation onError
+      setProcessing(false);
+    }
+  }
 
   return (
     <div className="space-y-10">
@@ -54,11 +72,11 @@ export default async function CheckoutPage({ params }: PageProps) {
 
       <div className="grid gap-8 lg:grid-cols-[1fr,380px] lg:items-start">
 
-        {/* ── Left: order summary ───────────────────── */}
+        {/* Left: order summary */}
         <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-accent">
-              Revisão do pedido
+              Revisao do pedido
             </p>
             <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
               {classEvent.title}
@@ -67,8 +85,8 @@ export default async function CheckoutPage({ params }: PageProps) {
 
           {/* Badges */}
           <div className="flex flex-wrap gap-2">
-            <StatusPill tone="default">{institution?.shortName}</StatusPill>
-            <StatusPill tone="muted">{subject?.name}</StatusPill>
+            <StatusPill tone="default">{classEvent.institution?.shortName}</StatusPill>
+            <StatusPill tone="muted">{classEvent.subject?.name}</StatusPill>
           </div>
 
           {/* Class details card */}
@@ -88,7 +106,7 @@ export default async function CheckoutPage({ params }: PageProps) {
               </div>
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
                 <Timer size={14} className="shrink-0" />
-                {classEvent.durationMin} min de duração
+                {classEvent.durationMin} min de duracao
               </div>
             </div>
 
@@ -98,19 +116,13 @@ export default async function CheckoutPage({ params }: PageProps) {
                 <div className="h-px bg-border" />
                 <div className="flex items-center gap-3">
                   <TeacherAvatar
-                    initials={teacher.photo}
-                    photoUrl={teacher.photoUrl}
+                    initials={teacherInitials}
+                    photoUrl={teacher.photoUrl ?? undefined}
                     alt={teacherName}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-xs font-bold text-cyan-300"
                   />
                   <div>
-                    <div className="flex items-center gap-1">
-                      <p className="text-sm font-semibold text-foreground">{teacherName}</p>
-                      {teacher.isVerified && (
-                        <BadgeCheck size={13} className="text-brand-accent" />
-                      )}
-                    </div>
-                    <p className="text-xs text-brand-accent/70">{teacher.headline}</p>
+                    <p className="text-sm font-semibold text-foreground">{teacherName}</p>
                   </div>
                 </div>
               </>
@@ -123,7 +135,7 @@ export default async function CheckoutPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* ── Right: payment panel ──────────────────── */}
+        {/* Right: payment panel */}
         <aside className="rounded-sm border border-border bg-surface p-6 space-y-6">
           <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
             Resumo do pagamento
@@ -143,12 +155,20 @@ export default async function CheckoutPage({ params }: PageProps) {
           </div>
 
           {/* Pay button */}
-          <PayButton classEventId={classEventId} />
+          <button
+            type="button"
+            disabled={processing}
+            onClick={handlePay}
+            className="flex w-full items-center justify-center gap-2.5 rounded-sm bg-brand-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Lock size={14} />
+            {processing ? "Processando..." : "Confirmar pagamento"}
+          </button>
 
           {/* Trust signals */}
           <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground/50">
             <ShieldCheck size={12} />
-            Pagamento seguro · Stripe · SSL
+            Pagamento seguro . Stripe . SSL
           </div>
 
           {/* Spots left */}
