@@ -4,8 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Calendar, Clock, ArrowUpRight, Users } from "lucide-react";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
-import type { ClassEvent } from "@/lib/domain";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
+
+type ClassEvent = {
+  id: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  durationMin: number;
+  priceCents: number;
+  capacity: number;
+  soldSeats: number;
+  publicationStatus: string;
+};
 
 export type TeacherCardData = {
   id: string;

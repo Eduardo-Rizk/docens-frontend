@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AuthLayout } from "@/components/AuthLayout";
-import { institutions, subjects } from "@/lib/domain";
+import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
+import { useAuth } from "@/lib/auth-context";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
 
 const input =
@@ -22,25 +24,25 @@ function toggleId(ids: string[], id: string) {
 export default function RegisterPage() {
   const [role, setRole] = useState<"STUDENT" | "TEACHER">("STUDENT");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [institutionIds, setInstitutionIds] = useState<string[]>([]);
   const [subjectIds, setSubjectIds] = useState<string[]>([]);
-  const [labels, setLabels] = useState<string[]>([]);
-  const [labelInput, setLabelInput] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
+
+  const { register } = useAuth();
+  const router = useRouter();
+  const { data: institutions } = useInstitutions();
+  const { data: subjects } = useSubjects();
+
   const initials = useMemo(() => {
     const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
     if (parts.length === 0) return "??";
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }, [name]);
-
-  function addLabel() {
-    const normalized = labelInput.trim();
-    if (!normalized) return;
-    if (labels.includes(normalized)) return;
-    setLabels((prev) => [...prev, normalized]);
-    setLabelInput("");
-  }
 
   function handlePhotoChange(file: File | undefined) {
     if (!file) return;
@@ -59,12 +61,33 @@ export default function RegisterPage() {
     };
   }, [photoUrl]);
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await register({
+        name,
+        email,
+        password,
+        phone,
+        role,
+        institutionIds,
+        subjectIds: role === "TEACHER" ? subjectIds : undefined,
+      });
+      router.push("/");
+    } catch {
+      // Error toast handled by auth context
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <AuthLayout
       title="Crie sua conta"
-      subtitle="Comece seu perfil com instituições, labels e matérias."
+      subtitle="Comece seu perfil com instituicoes e materias."
     >
-      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+      <form className="space-y-5" onSubmit={handleSubmit}>
         {/* Nome */}
         <div>
           <label htmlFor="name" className={label}>
@@ -78,6 +101,7 @@ export default function RegisterPage() {
             autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            required
           />
         </div>
 
@@ -92,6 +116,9 @@ export default function RegisterPage() {
             placeholder="seu@email.com"
             className={input}
             autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
 
@@ -107,6 +134,8 @@ export default function RegisterPage() {
               placeholder="(11) 99999-9999"
               className={input}
               autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </div>
           <div>
@@ -143,11 +172,11 @@ export default function RegisterPage() {
         <div>
           <label className={label}>
             {role === "TEACHER"
-              ? "Instituições onde deseja lecionar"
-              : "Instituições onde estuda"}
+              ? "Instituicoes onde deseja lecionar"
+              : "Instituicoes onde estuda"}
           </label>
           <div className="flex flex-wrap gap-2">
-            {institutions.map((institution) => {
+            {(institutions ?? []).map((institution) => {
               const active = institutionIds.includes(institution.id);
               return (
                 <button
@@ -168,16 +197,16 @@ export default function RegisterPage() {
             })}
           </div>
           <p className="mt-2 text-[10px] text-muted-foreground/55">
-            Você pode editar depois no perfil.
+            Voce pode editar depois no perfil.
           </p>
         </div>
 
         {role === "TEACHER" && (
           <>
             <div>
-              <label className={label}>Matérias que você leciona</label>
+              <label className={label}>Materias que voce leciona</label>
               <div className="flex flex-wrap gap-2">
-                {subjects.map((subject) => {
+                {(subjects ?? []).map((subject) => {
                   const active = subjectIds.includes(subject.id);
                   return (
                     <button
@@ -207,7 +236,7 @@ export default function RegisterPage() {
                 <TeacherAvatar
                   initials={initials}
                   photoUrl={photoUrl}
-                  alt="Prévia da foto"
+                  alt="Previa da foto"
                   className="flex h-14 w-14 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-sm font-bold text-cyan-300"
                 />
                 <input
@@ -222,55 +251,6 @@ export default function RegisterPage() {
           </>
         )}
 
-        <div>
-          <label htmlFor="labels" className={label}>
-            Labels do perfil
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="labels"
-              type="text"
-              value={labelInput}
-              onChange={(e) => setLabelInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === ",") {
-                  e.preventDefault();
-                  addLabel();
-                }
-              }}
-              placeholder={
-                role === "TEACHER"
-                  ? "Ex: FUVEST, Cálculo, Direito"
-                  : "Ex: Móbile, Vestibular, Medicina"
-              }
-              className={input}
-            />
-            <button
-              type="button"
-              onClick={addLabel}
-              className="border border-border px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
-            >
-              Add
-            </button>
-          </div>
-          {labels.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {labels.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() =>
-                    setLabels((prev) => prev.filter((entry) => entry !== tag))
-                  }
-                  className="border border-brand-accent/30 bg-brand-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-brand-accent"
-                >
-                  {tag} ×
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Senha */}
         <div>
           <label htmlFor="password" className={label}>
@@ -279,9 +259,12 @@ export default function RegisterPage() {
           <input
             id="password"
             type="password"
-            placeholder="Mínimo 8 caracteres"
+            placeholder="Minimo 8 caracteres"
             className={input}
             autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
 
@@ -291,14 +274,15 @@ export default function RegisterPage() {
         {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-brand-accent text-background font-bold text-xs uppercase tracking-[0.14em] py-3.5 hover:opacity-90 active:scale-[0.99] transition-all duration-150"
+          disabled={loading}
+          className="w-full bg-brand-accent text-background font-bold text-xs uppercase tracking-[0.14em] py-3.5 hover:opacity-90 active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
         >
-          Criar conta
+          {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </form>
 
       <p className="text-center text-[11px] text-muted-foreground/50 tracking-wide">
-        Já tem uma conta?{" "}
+        Ja tem uma conta?{" "}
         <Link
           href="/login"
           className="text-brand-accent font-semibold hover:opacity-70 transition-opacity duration-200"

@@ -1,6 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../api'
 
+export interface Subject {
+  id: string
+  name: string
+  icon: string | null
+}
+
+export function useSubjects() {
+  return useQuery({
+    queryKey: ['subjects'],
+    queryFn: () => apiFetch<Subject[]>('/subjects'),
+  })
+}
+
 export interface Institution {
   id: string
   name: string

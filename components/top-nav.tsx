@@ -4,14 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
-const navItems = [
-  { href: "/", label: "Início" },
+const publicItems = [
+  { href: "/", label: "Inicio" },
   { href: "/explorar", label: "Explorar" },
+];
+
+const studentItems = [
   { href: "/aluno/meus-auloes", label: "Minha Agenda" },
   { href: "/aluno/perfil", label: "Meu Perfil" },
+];
+
+const teacherItems = [
   { href: "/professor/auloes", label: "Prof." },
 ];
 
@@ -23,6 +30,13 @@ function isActive(pathname: string, href: string) {
 export function TopNav() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isLoading, logout } = useAuth();
+
+  const navItems = [
+    ...publicItems,
+    ...(user?.role === "STUDENT" || user?.role === "TEACHER" ? studentItems : []),
+    ...(user?.role === "TEACHER" ? teacherItems : []),
+  ];
 
   return (
     <>
@@ -76,13 +90,28 @@ export function TopNav() {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="hidden md:flex items-center gap-2 px-5 py-2 text-sm font-semibold text-background bg-foreground hover:bg-foreground/90 transition-colors"
-            >
-              Entrar
-              <ArrowUpRight size={14} />
-            </Link>
+            {!isLoading && !user && (
+              <Link
+                href="/login"
+                className="hidden md:flex items-center gap-2 px-5 py-2 text-sm font-semibold text-background bg-foreground hover:bg-foreground/90 transition-colors"
+              >
+                Entrar
+                <ArrowUpRight size={14} />
+              </Link>
+            )}
+
+            {!isLoading && user && (
+              <div className="hidden md:flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">{user.name}</span>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:border-zinc-600 transition-colors"
+                >
+                  <LogOut size={12} />
+                  Sair
+                </button>
+              </div>
+            )}
 
             {/* Mobile toggle */}
             <button
@@ -125,14 +154,24 @@ export function TopNav() {
                   </Link>
                 );
               })}
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-background bg-foreground"
-              >
-                Entrar
-                <ArrowUpRight size={14} />
-              </Link>
+              {!user ? (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-background bg-foreground"
+                >
+                  Entrar
+                  <ArrowUpRight size={14} />
+                </Link>
+              ) : (
+                <button
+                  onClick={() => { setMobileOpen(false); logout(); }}
+                  className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-muted-foreground border border-border"
+                >
+                  <LogOut size={14} />
+                  Sair
+                </button>
+              )}
             </nav>
           </motion.div>
         )}

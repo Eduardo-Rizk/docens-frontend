@@ -1,11 +1,9 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ChevronRight, Users } from "lucide-react";
-import {
-  getInstitutionById,
-  getYearLevels,
-  getTeachersBySubjectAndInstitution,
-} from "@/lib/domain";
+import { useInstitution, useInstitutionSubjects } from "@/lib/queries/institutions";
 import { SubjectIcon } from "@/components/SubjectIcon";
 import { BackLink } from "@/components/BackLink";
 
@@ -45,27 +43,46 @@ const SUBJECT_ICON_COLORS: Record<string, string> = {
   "sub-ingles":     "text-sky-400",
 };
 
-export default async function InstitutionPage({ params }: PageProps) {
-  const { institutionId } = await params;
-  const institution = getInstitutionById(institutionId);
+export default function InstitutionPage({ params }: PageProps) {
+  const { institutionId } = use(params);
+  const { data: institution, isLoading: loadingInst } = useInstitution(institutionId);
+  const { data: subjects, isLoading: loadingSubjects } = useInstitutionSubjects(institutionId);
 
-  if (!institution) {
-    notFound();
+  if (loadingInst || loadingSubjects) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="h-4 w-24 bg-zinc-800 rounded" />
+        <div className="space-y-3">
+          <div className="h-6 w-32 bg-zinc-800 rounded" />
+          <div className="h-12 w-96 bg-zinc-800 rounded" />
+          <div className="h-4 w-80 bg-zinc-800 rounded" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-28 bg-zinc-800 rounded-sm" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  const yearLevels = getYearLevels(institutionId);
+  if (!institution) {
+    return <div className="p-8 text-zinc-400">Instituicao nao encontrada.</div>;
+  }
+
+  const subjectList = subjects ?? [];
 
   return (
     <div className="space-y-14">
       {/* Header */}
       <header className="space-y-6">
-        <BackLink href="/explorar" label="Instituições" />
+        <BackLink href="/explorar" label="Instituicoes" />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <span className="inline-block rounded-sm border border-border bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                {institution.type === "SCHOOL" ? "Ensino Médio" : "Graduação"}
+                {institution.type === "SCHOOL" ? "Ensino Medio" : "Graduacao"}
               </span>
               <span className="text-xs text-muted-foreground">{institution.city}</span>
             </div>
@@ -73,7 +90,7 @@ export default async function InstitutionPage({ params }: PageProps) {
               {institution.name}
             </h1>
             <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-              Escolha a matéria para ver os professores disponíveis e agendar sua próxima aula.
+              Escolha a materia para ver os professores disponiveis e agendar sua proxima aula.
             </p>
           </div>
         </div>
@@ -82,74 +99,65 @@ export default async function InstitutionPage({ params }: PageProps) {
         <div className="h-px w-full bg-gradient-to-r from-brand-accent/40 via-brand-accent/10 to-transparent" />
       </header>
 
-      {/* Year sections */}
-      {yearLevels.length === 0 ? (
+      {/* Subjects grid */}
+      {subjectList.length === 0 ? (
         <div className="rounded-sm border border-border bg-surface p-12 text-center">
-          <p className="font-display text-2xl text-foreground">Nenhuma matéria cadastrada</p>
-          <p className="mt-2 text-sm text-muted-foreground">Esta instituição ainda não possui matérias disponíveis.</p>
+          <p className="font-display text-2xl text-foreground">Nenhuma materia cadastrada</p>
+          <p className="mt-2 text-sm text-muted-foreground">Esta instituicao ainda nao possui materias disponiveis.</p>
         </div>
       ) : (
-        yearLevels.map((yearLevel) => (
-          <section key={yearLevel.yearLabel} className="space-y-6">
-            {/* Year label */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-6 w-1 bg-brand-accent" />
-                <h2 className="font-display text-2xl text-foreground">
-                  {yearLevel.yearLabel}
-                </h2>
-              </div>
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs font-medium text-muted-foreground tabular-nums">
-                {yearLevel.subjects.length} matérias
-              </span>
+        <section className="space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-1 bg-brand-accent" />
+              <h2 className="font-display text-2xl text-foreground">
+                Materias
+              </h2>
             </div>
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs font-medium text-muted-foreground tabular-nums">
+              {subjectList.length} materias
+            </span>
+          </div>
 
-            {/* Subject grid */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {yearLevel.subjects.map((subject) => {
-                const teachers = getTeachersBySubjectAndInstitution(institutionId, subject.id);
-                const colorClass = SUBJECT_COLORS[subject.id] ?? "from-zinc-800/60 to-zinc-800/20 border-zinc-700/40 hover:border-zinc-500/60";
-                const iconColorClass = SUBJECT_ICON_COLORS[subject.id] ?? "text-zinc-400";
-                const hasTeachers = teachers.length > 0;
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {subjectList.map((subject) => {
+              const colorClass = SUBJECT_COLORS[subject.subjectId] ?? "from-zinc-800/60 to-zinc-800/20 border-zinc-700/40 hover:border-zinc-500/60";
+              const iconColorClass = SUBJECT_ICON_COLORS[subject.subjectId] ?? "text-zinc-400";
 
-                return (
-                  <Link
-                    key={subject.id}
-                    href={`/instituicoes/${institutionId}/materias/${subject.id}`}
-                    className={`group relative flex flex-col gap-3 rounded-sm border bg-gradient-to-b p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 ${colorClass}`}
-                  >
-                    {/* Icon */}
-                    <SubjectIcon name={subject.icon} size={22} className={iconColorClass} />
+              return (
+                <Link
+                  key={subject.subjectId}
+                  href={`/instituicoes/${institutionId}/materias/${subject.subjectId}`}
+                  className={`group relative flex flex-col gap-3 rounded-sm border bg-gradient-to-b p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 ${colorClass}`}
+                >
+                  <SubjectIcon name={undefined} size={22} className={iconColorClass} />
 
-                    {/* Name */}
-                    <div className="flex-1">
-                      <p className="font-display text-base font-semibold leading-tight text-foreground">
-                        {subject.name}
-                      </p>
-                    </div>
+                  <div className="flex-1">
+                    <p className="font-display text-base font-semibold leading-tight text-foreground">
+                      {subject.subjectName}
+                    </p>
+                  </div>
 
-                    {/* Teachers count + arrow */}
-                    <div className="flex items-center justify-between">
-                      {hasTeachers ? (
-                        <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <Users size={11} />
-                          {teachers.length} professor{teachers.length !== 1 ? "es" : ""}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/60">Em breve</span>
-                      )}
-                      <ChevronRight
-                        size={14}
-                        className="text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground"
-                      />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        ))
+                  <div className="flex items-center justify-between">
+                    {subject.teacherCount > 0 ? (
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        <Users size={11} />
+                        {subject.teacherCount} professor{subject.teacherCount !== 1 ? "es" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/60">Em breve</span>
+                    )}
+                    <ChevronRight
+                      size={14}
+                      className="text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground"
+                    />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
     </div>
   );

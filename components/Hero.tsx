@@ -3,15 +3,12 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Play, BookOpen, Zap } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { getUserById, viewer } from "@/lib/domain";
+import { useAuth } from "@/lib/auth-context";
 
 export function Hero() {
-  const searchParams = useSearchParams();
-  const previewGuest = searchParams.get("preview") === "guest";
-  const profile = previewGuest ? undefined : getUserById(viewer.userId);
-  const isLoggedIn = Boolean(profile);
-  const firstName = profile?.name.split(" ")[0] ?? "";
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user);
+  const firstName = user?.name.split(" ")[0] ?? "";
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden px-4 sm:px-8">
@@ -45,15 +42,15 @@ export function Hero() {
           <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
             <span className="block bg-gradient-to-br from-white via-sky-200 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
               {isLoggedIn
-                ? `Olá, ${firstName}. Vamos para o próximo aulão?`
-                : "Aprenda com quem já passou pelo que você está vivendo."}
+                ? `Ola, ${firstName}. Vamos para o proximo aulao?`
+                : "Aprenda com quem ja passou pelo que voce esta vivendo."}
             </span>
           </h1>
 
           <p className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
             {isLoggedIn
-              ? "Seu perfil está pronto. Explore recomendações alinhadas às suas instituições e matérias."
-              : "Conecte-se com mentores experientes para mentorias e aulões ao vivo."}
+              ? "Seu perfil esta pronto. Explore recomendacoes alinhadas as suas instituicoes e materias."
+              : "Conecte-se com mentores experientes para mentorias e auloes ao vivo."}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">

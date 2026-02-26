@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { institutions } from "@/lib/domain";
+import { useInstitutions } from "@/lib/queries/institutions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +13,34 @@ type Tab = "UNIVERSITY" | "SCHOOL";
 
 export function ExploreFeed() {
   const [activeTab, setActiveTab] = useState<Tab>("UNIVERSITY");
+  const { data: institutions, isLoading } = useInstitutions();
 
-  const filteredInstitutions = institutions.filter(
+  const filteredInstitutions = (institutions ?? []).filter(
     (inst) => inst.type === activeTab
   );
+
+  if (isLoading) {
+    return (
+      <section className="py-20 px-4 sm:px-8 relative z-10">
+        <div className="container mx-auto max-w-[1200px]">
+          <div className="animate-pulse space-y-8">
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <div className="h-3 w-24 bg-zinc-800 rounded" />
+                <div className="h-8 w-64 bg-zinc-800 rounded" />
+              </div>
+              <div className="h-10 w-48 bg-zinc-800 rounded" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-36 bg-zinc-800 rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="explore" className="py-20 px-4 sm:px-8 relative z-10">

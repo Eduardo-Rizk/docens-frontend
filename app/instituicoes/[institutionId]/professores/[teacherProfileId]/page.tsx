@@ -1,17 +1,13 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { BadgeCheck, Calendar, Clock, Timer, Users, ArrowUpRight } from "lucide-react";
 import { SubjectIcon } from "@/components/SubjectIcon";
 import { BackLink } from "@/components/BackLink";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
-import {
-  getInstitutionById,
-  getSubjectById,
-  getTeacherById,
-  getUserById,
-  getTeacherClasses,
-  isClassSoldOut,
-} from "@/lib/domain";
+import { useInstitution } from "@/lib/queries/institutions";
+import { useTeacherDetail } from "@/lib/queries/teachers";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
 type PageProps = {
@@ -32,34 +28,46 @@ function hashIndex(id: string, len: number) {
   return h % len;
 }
 
-export default async function TeacherProfilePage({ params }: PageProps) {
-  const { institutionId, teacherProfileId } = await params;
+export default function TeacherProfilePage({ params }: PageProps) {
+  const { institutionId, teacherProfileId } = use(params);
+  const { data: institution, isLoading: loadingInst } = useInstitution(institutionId);
+  const { data: detail, isLoading: loadingDetail } = useTeacherDetail(institutionId, teacherProfileId);
 
-  const institution = getInstitutionById(institutionId);
-  const teacher = getTeacherById(teacherProfileId);
-
-  if (!institution || !teacher) {
-    notFound();
+  if (loadingInst || loadingDetail) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="flex gap-6">
+          <div className="h-20 w-20 bg-zinc-800 rounded-sm" />
+          <div className="space-y-3 flex-1">
+            <div className="h-10 w-64 bg-zinc-800 rounded" />
+            <div className="h-4 w-48 bg-zinc-800 rounded" />
+            <div className="h-4 w-80 bg-zinc-800 rounded" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-32 bg-zinc-800 rounded-sm" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  const teacherUser = getUserById(teacher.userId);
-  const teacherName = teacherUser?.name ?? teacher.headline;
+  if (!institution || !detail) {
+    return <div className="p-8 text-zinc-400">Professor nao encontrado.</div>;
+  }
+
+  const teacher = detail.teacherProfile;
+  const teacherName = teacher.user.name;
   const palette = AVATAR_PALETTE[hashIndex(teacher.id, AVATAR_PALETTE.length)];
-  const profileSubjects = teacher.subjectIds
-    .map((subjectId) => getSubjectById(subjectId)?.name)
-    .filter((name): name is string => Boolean(name));
+  const initials = teacherName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
-  // All published classes for this teacher at this institution, grouped by subject
-  const allClasses = getTeacherClasses(teacherProfileId).filter(
-    (e) => e.institutionId === institutionId && e.publicationStatus === "PUBLISHED",
-  );
+  const profileSubjects = detail.subjects.map(s => s.name);
 
-  const bySubject = allClasses.reduce<Record<string, typeof allClasses>>((acc, event) => {
-    (acc[event.subjectId] ??= []).push(event);
-    return acc;
-  }, {});
-
-  const totalOpen = allClasses.filter((e) => !isClassSoldOut(e)).length;
+  // Flatten all class events from classesBySubject
+  const allClasses = Object.values(detail.classesBySubject).flatMap(s => s.classEvents);
+  const totalOpen = allClasses.filter(e => e.soldSeats < e.capacity).length;
 
   return (
     <div className="space-y-12">
@@ -69,8 +77,8 @@ export default async function TeacherProfilePage({ params }: PageProps) {
       {/* Teacher header */}
       <header className="flex flex-col gap-6 sm:flex-row sm:items-start">
         <TeacherAvatar
-          initials={teacher.photo}
-          photoUrl={teacher.photoUrl}
+          initials={initials}
+          photoUrl={teacher.photoUrl ?? undefined}
           alt={teacherName}
           className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-sm border text-xl font-bold ${palette.cls}`}
         />
@@ -80,9 +88,6 @@ export default async function TeacherProfilePage({ params }: PageProps) {
             <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
               {teacherName}
             </h1>
-            {teacher.isVerified && (
-              <BadgeCheck size={22} className="shrink-0 text-brand-accent" />
-            )}
           </div>
 
           <p className="text-base font-medium" style={{ color: palette.hex }}>
@@ -94,14 +99,6 @@ export default async function TeacherProfilePage({ params }: PageProps) {
           </p>
 
           <div className="flex flex-wrap gap-1.5">
-            {teacher.labels.map((tag) => (
-              <span
-                key={tag}
-                className="border border-brand-accent/25 bg-brand-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-brand-accent"
-              >
-                {tag}
-              </span>
-            ))}
             {profileSubjects.map((subjectName) => (
               <span
                 key={subjectName}
@@ -114,10 +111,10 @@ export default async function TeacherProfilePage({ params }: PageProps) {
 
           <p className="text-xs text-muted-foreground">
             {allClasses.length} aula{allClasses.length !== 1 ? "s" : ""} publicada{allClasses.length !== 1 ? "s" : ""}
-            {" · "}
-            {Object.keys(bySubject).length} matéria{Object.keys(bySubject).length !== 1 ? "s" : ""}
+            {" . "}
+            {Object.keys(detail.classesBySubject).length} materia{Object.keys(detail.classesBySubject).length !== 1 ? "s" : ""}
             {totalOpen > 0 && (
-              <span className="ml-2 text-emerald-400">· {totalOpen} com vaga</span>
+              <span className="ml-2 text-emerald-400">. {totalOpen} com vaga</span>
             )}
           </p>
         </div>
@@ -132,20 +129,21 @@ export default async function TeacherProfilePage({ params }: PageProps) {
         </div>
       ) : (
         <div className="space-y-10">
-          {Object.entries(bySubject).map(([subjectId, events]) => {
-            const subject = getSubjectById(subjectId);
+          {Object.entries(detail.classesBySubject).map(([, group]) => {
+            const subject = group.subject;
+            const events = group.classEvents;
 
             return (
-              <section key={subjectId} className="space-y-4">
+              <section key={subject.id} className="space-y-4">
                 {/* Subject header */}
                 <div className="flex items-center gap-3">
                   <SubjectIcon
-                    name={subject?.icon}
+                    name={undefined}
                     size={18}
                     className="text-brand-accent shrink-0"
                   />
                   <h2 className="font-display text-xl text-foreground">
-                    {subject?.name ?? subjectId}
+                    {subject.name}
                   </h2>
                   <div className="flex-1 h-px bg-border" />
                   <span className="text-xs text-muted-foreground">
@@ -156,7 +154,7 @@ export default async function TeacherProfilePage({ params }: PageProps) {
                 {/* Class cards */}
                 <div className="flex flex-col gap-3">
                   {events.map((event) => {
-                    const sold = isClassSoldOut(event);
+                    const sold = event.soldSeats >= event.capacity;
                     const spotsLeft = event.capacity - event.soldSeats;
 
                     return (
@@ -168,9 +166,6 @@ export default async function TeacherProfilePage({ params }: PageProps) {
                         <div className="min-w-0 flex-1 space-y-2">
                           <p className="font-display text-lg leading-snug text-foreground">
                             {event.title}
-                          </p>
-                          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                            {event.description}
                           </p>
                           <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1.5">

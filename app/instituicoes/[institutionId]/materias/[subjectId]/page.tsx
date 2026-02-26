@@ -1,23 +1,17 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { SubjectIcon } from "@/components/SubjectIcon";
 import { BackLink } from "@/components/BackLink";
-import {
-  getInstitutionById,
-  getSubjectById,
-  getTeachersBySubjectAndInstitution,
-  getNextClassEventForTeacher,
-  getClassEventsBySubjectAndInstitution,
-  getUserById,
-  isClassSoldOut,
-} from "@/lib/domain";
+import { useInstitution, useSubjectTeachers } from "@/lib/queries/institutions";
+import { useClassEvents } from "@/lib/queries/class-events";
 import { TeacherGrid, type TeacherCardData } from "@/components/TeacherGrid";
 
 type PageProps = {
   params: Promise<{ institutionId: string; subjectId: string }>;
 };
 
-// Per-teacher accent palette: [bg/border class, text class, raw hex]
 const AVATAR_PALETTE: Array<{
   cls: string;
   hex: string;
@@ -29,40 +23,67 @@ const AVATAR_PALETTE: Array<{
   { cls: "bg-rose-500/20 text-rose-300 border-rose-500/30",    hex: "#fb7185" },
 ];
 
-export default async function SubjectPage({ params }: PageProps) {
-  const { institutionId, subjectId } = await params;
+export default function SubjectPage({ params }: PageProps) {
+  const { institutionId, subjectId } = use(params);
+  const { data: institution, isLoading: loadingInst } = useInstitution(institutionId);
+  const { data: teachers, isLoading: loadingTeachers } = useSubjectTeachers(institutionId, subjectId);
+  const { data: allEvents, isLoading: loadingEvents } = useClassEvents({ institutionId, subjectId });
 
-  const institution = getInstitutionById(institutionId);
-  const subject = getSubjectById(subjectId);
+  const isLoading = loadingInst || loadingTeachers || loadingEvents;
 
-  if (!institution || !subject) {
-    notFound();
+  if (isLoading) {
+    return (
+      <div className="animate-pulse space-y-8 p-4">
+        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="space-y-3">
+          <div className="h-6 w-32 bg-zinc-800 rounded" />
+          <div className="h-12 w-80 bg-zinc-800 rounded" />
+          <div className="h-4 w-60 bg-zinc-800 rounded" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-80 bg-zinc-800 rounded-sm" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  const teachers = getTeachersBySubjectAndInstitution(institutionId, subjectId);
-  const allEvents = getClassEventsBySubjectAndInstitution(institutionId, subjectId);
+  if (!institution) {
+    return <div className="p-8 text-zinc-400">Instituicao nao encontrada.</div>;
+  }
+
+  const teacherList = teachers ?? [];
+  const eventList = allEvents ?? [];
+
+  // Derive the subject name from the first teacher's context or from events
+  const subjectName = teacherList.length > 0
+    ? (eventList.find(e => e.subject)?.subject.name ?? subjectId)
+    : subjectId;
 
   // Build serializable card data for the client component
-  const teacherCards: TeacherCardData[] = teachers.map((teacher, index) => {
+  const teacherCards: TeacherCardData[] = teacherList.map((teacher, index) => {
     const palette = AVATAR_PALETTE[index % AVATAR_PALETTE.length];
-    const user = getUserById(teacher.userId);
-    const nextEvent = getNextClassEventForTeacher(institutionId, subjectId, teacher.id);
-    const teacherEvents = allEvents.filter((e) => e.teacherProfileId === teacher.id);
-    const openCount = teacherEvents.filter((e) => !isClassSoldOut(e)).length;
+    const teacherEvents = eventList.filter((e) => e.teacherProfile.id === teacher.teacherProfile.id);
+    const openCount = teacherEvents.filter((e) => e.soldSeats < e.capacity).length;
+
+    const nextEvent = teacher.nextEvent
+      ? eventList.find(e => e.id === teacher.nextEvent?.id)
+      : undefined;
 
     return {
-      id: teacher.id,
-      photo: teacher.photo,
-      photoUrl: teacher.photoUrl,
-      headline: teacher.headline,
-      bio: teacher.bio,
-      isVerified: teacher.isVerified,
-      userName: user?.name ?? teacher.headline,
+      id: teacher.teacherProfile.id,
+      photo: teacher.teacherProfile.photoUrl ? "" : (teacher.user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()),
+      photoUrl: teacher.teacherProfile.photoUrl ?? undefined,
+      headline: teacher.teacherProfile.headline,
+      bio: teacher.teacherProfile.bio,
+      isVerified: false,
+      userName: teacher.user.name,
       avatarColor: palette.cls,
       avatarTextColor: "",
       accentHex: palette.hex,
-      nextEvent,
-      events: teacherEvents,
+      nextEvent: nextEvent as TeacherCardData["nextEvent"],
+      events: teacherEvents as TeacherCardData["events"],
       openCount,
     };
   });
@@ -76,40 +97,40 @@ export default async function SubjectPage({ params }: PageProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <span className="inline-block rounded-sm border border-border bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              {institution.type === "SCHOOL" ? "Ensino Médio" : "Graduação"}
+              {institution.type === "SCHOOL" ? "Ensino Medio" : "Graduacao"}
             </span>
             <span className="text-xs text-muted-foreground">{institution.name}</span>
           </div>
 
           <div className="flex items-center gap-4">
-            <SubjectIcon name={subject.icon} size={36} className="text-brand-accent" />
+            <SubjectIcon name={undefined} size={36} className="text-brand-accent" />
             <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
-              {subject.name}
+              {subjectName}
             </h1>
           </div>
 
           <p className="text-base text-muted-foreground">
-            {teachers.length > 0
-              ? `${teachers.length} professor${teachers.length !== 1 ? "es" : ""} disponíve${teachers.length !== 1 ? "is" : "l"} · ${allEvents.length} aula${allEvents.length !== 1 ? "s" : ""} publicada${allEvents.length !== 1 ? "s" : ""}`
-              : "Nenhum professor disponível no momento."}
+            {teacherList.length > 0
+              ? `${teacherList.length} professor${teacherList.length !== 1 ? "es" : ""} disponive${teacherList.length !== 1 ? "is" : "l"} · ${eventList.length} aula${eventList.length !== 1 ? "s" : ""} publicada${eventList.length !== 1 ? "s" : ""}`
+              : "Nenhum professor disponivel no momento."}
           </p>
         </div>
 
         <div className="h-px w-full bg-gradient-to-r from-brand-accent/40 via-brand-accent/10 to-transparent" />
       </header>
 
-      {/* Teacher grid (client — handles filtering) */}
-      {teachers.length === 0 ? (
+      {/* Teacher grid */}
+      {teacherList.length === 0 ? (
         <div className="rounded-sm border border-border bg-surface p-12 text-center">
           <p className="font-display text-2xl text-foreground">Nenhum professor cadastrado</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Ainda não há professores com aulas publicadas para esta matéria.
+            Ainda nao ha professores com aulas publicadas para esta materia.
           </p>
           <Link
             href={`/instituicoes/${institutionId}`}
             className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-accent hover:opacity-70"
           >
-            Ver outras matérias
+            Ver outras materias
           </Link>
         </div>
       ) : (
