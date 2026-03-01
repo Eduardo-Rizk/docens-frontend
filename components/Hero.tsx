@@ -11,7 +11,7 @@ export function Hero() {
   const firstName = user?.name.split(" ")[0] ?? "";
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden px-4 sm:px-8 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]">
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden px-4 sm:px-8 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] -mx-6 sm:-mx-8 -mt-10 sm:-mt-14">
       {/* Subtle radial glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[#1e40af]/10 blur-[140px] -z-0 pointer-events-none" />
 
