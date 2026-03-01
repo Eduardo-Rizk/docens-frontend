@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Zap, BookOpen, Play, Users, Calendar, Star, Clock, MapPin } from "lucide-react";
+import { ArrowRight, Zap, BookOpen, Users, Clock } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { ContainerScroll } from "@/components/ui/container-scroll-animation";
@@ -85,8 +85,8 @@ export function Hero() {
         <PlatformMockup />
       </ContainerScroll>
 
-      {/* Bottom divider */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#d1d5db] to-transparent" />
+      {/* Bottom fade to page background */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8f9fa] to-transparent" />
     </section>
   );
 }
