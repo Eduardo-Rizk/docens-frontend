@@ -15,20 +15,20 @@ export default function ProfessorLayout({
     return (
       <div className="animate-pulse space-y-8">
         <div className="flex items-center gap-4 border-b border-border pb-6">
-          <div className="h-12 w-12 bg-zinc-800 rounded-sm" />
+          <div className="h-12 w-12 bg-[#d1d5db] rounded-sm" />
           <div className="space-y-2">
-            <div className="h-3 w-20 bg-zinc-800 rounded" />
-            <div className="h-6 w-40 bg-zinc-800 rounded" />
+            <div className="h-3 w-20 bg-[#d1d5db] rounded" />
+            <div className="h-6 w-40 bg-[#d1d5db] rounded" />
           </div>
         </div>
-        <div className="h-10 w-64 bg-zinc-800 rounded" />
-        <div className="h-64 bg-zinc-800 rounded" />
+        <div className="h-10 w-64 bg-[#d1d5db] rounded" />
+        <div className="h-64 bg-[#d1d5db] rounded" />
       </div>
     );
   }
 
   if (!user) {
-    return <div className="p-8 text-zinc-400">Nao autenticado.</div>;
+    return <div className="p-8 text-muted-foreground">Nao autenticado.</div>;
   }
 
   const initials = user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();

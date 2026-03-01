@@ -83,16 +83,16 @@ export default function ExplorePage() {
                 onClick={() => setActiveTab(tab.id as Tab)}
                 className={cn(
                   "px-6 py-2.5 text-sm font-semibold transition-all duration-200 relative",
-                  i > 0 && "border-l border-border",
+                  i > 0 && "border-l border-[#d1d5db]",
                   activeTab === tab.id
-                    ? "text-background"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-white"
+                    : "text-[#6b7280] hover:text-[#0f172a]"
                 )}
               >
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="active-filter-tab"
-                    className="absolute inset-0 bg-brand-accent"
+                    className="absolute inset-0 bg-[#0f172a] rounded-md"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
@@ -106,7 +106,7 @@ export default function ExplorePage() {
         {isLoading && (
           <div className="animate-pulse grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-[220px] bg-zinc-800 rounded-lg" />
+              <div key={i} className="h-[220px] bg-[#d1d5db] rounded-md" />
             ))}
           </div>
         )}

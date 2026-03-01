@@ -72,23 +72,23 @@ export default function TeacherPerfilPage() {
     return (
       <div className="animate-pulse space-y-8 p-4">
         <div className="space-y-3">
-          <div className="h-10 w-32 bg-zinc-800 rounded" />
-          <div className="h-4 w-64 bg-zinc-800 rounded" />
+          <div className="h-10 w-32 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-64 bg-[#d1d5db] rounded" />
         </div>
         <div className="grid gap-8 lg:grid-cols-[1fr,340px]">
           <div className="space-y-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-16 bg-zinc-800 rounded" />
+              <div key={i} className="h-16 bg-[#d1d5db] rounded" />
             ))}
           </div>
-          <div className="h-64 bg-zinc-800 rounded" />
+          <div className="h-64 bg-[#d1d5db] rounded" />
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return <div className="p-8 text-zinc-400">Perfil nao encontrado.</div>;
+    return <div className="p-8 text-muted-foreground">Perfil nao encontrado.</div>;
   }
 
   return (
@@ -135,7 +135,7 @@ export default function TeacherPerfilPage() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => handlePhotoChange(e.target.files?.[0])}
-                className="block w-full text-xs text-muted-foreground file:mr-3 file:border file:border-border file:bg-surface file:px-3 file:py-2 file:text-[11px] file:font-semibold file:text-foreground hover:file:border-zinc-600"
+                className="block w-full text-xs text-muted-foreground file:mr-3 file:border file:border-border file:bg-surface file:px-3 file:py-2 file:text-[11px] file:font-semibold file:text-foreground hover:file:border-[#9ca3af]"
               />
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function TeacherPerfilPage() {
           <button
             type="submit"
             disabled={updateProfile.isPending}
-            className="flex items-center gap-2 rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md bg-[#ea580c] px-6 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-[#c2410c] disabled:opacity-50"
           >
             {updateProfile.isSuccess ? (
               <>

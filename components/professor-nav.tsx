@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/professor/auloes", label: "Meus Aulões" },
+  { href: "/professor/auloes", label: "Meus Auloes" },
   { href: "/professor/dashboard", label: "Dashboard" },
   { href: "/professor/perfil", label: "Perfil" },
 ];
@@ -39,7 +39,7 @@ export function ProfessorNav() {
               {active && (
                 <motion.div
                   layoutId="prof-nav-indicator"
-                  className="absolute bottom-0 left-2 right-2 h-px bg-brand-accent"
+                  className="absolute bottom-0 left-2 right-2 h-px bg-[#0f172a]"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
@@ -51,12 +51,12 @@ export function ProfessorNav() {
       <Link
         href="/professor/novo-aulao"
         className={cn(
-          "mb-2 flex items-center gap-1.5 rounded-sm bg-brand-accent px-3 py-2 text-xs font-bold uppercase tracking-wider text-black transition-all hover:brightness-110",
-          isActive(pathname, "/professor/novo-aulao") && "brightness-110"
+          "mb-2 flex items-center gap-1.5 rounded-md bg-[#ea580c] px-3 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-[#c2410c]",
+          isActive(pathname, "/professor/novo-aulao") && "bg-[#c2410c]"
         )}
       >
         <Plus size={13} />
-        Novo Aulão
+        Novo Aulao
       </Link>
     </div>
   );

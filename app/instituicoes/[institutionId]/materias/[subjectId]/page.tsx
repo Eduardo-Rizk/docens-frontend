@@ -34,15 +34,15 @@ export default function SubjectPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="h-4 w-32 bg-[#d1d5db] rounded" />
         <div className="space-y-3">
-          <div className="h-6 w-32 bg-zinc-800 rounded" />
-          <div className="h-12 w-80 bg-zinc-800 rounded" />
-          <div className="h-4 w-60 bg-zinc-800 rounded" />
+          <div className="h-6 w-32 bg-[#d1d5db] rounded" />
+          <div className="h-12 w-80 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-60 bg-[#d1d5db] rounded" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-80 bg-zinc-800 rounded-sm" />
+            <div key={i} className="h-80 bg-[#d1d5db] rounded-md" />
           ))}
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function SubjectPage({ params }: PageProps) {
   }
 
   if (!institution) {
-    return <div className="p-8 text-zinc-400">Instituicao nao encontrada.</div>;
+    return <div className="p-8 text-muted-foreground">Instituicao nao encontrada.</div>;
   }
 
   const teacherList = teachers ?? [];

@@ -32,8 +32,8 @@ const SUBJECT_ICON_COLORS: Record<string, string> = {
   "sub-calculo":    "text-cyan-400",
   "sub-fisica":     "text-blue-400",
   "sub-quimica":    "text-purple-400",
-  "sub-biologia":   "text-emerald-400",
-  "sub-historia":   "text-amber-400",
+  "sub-biologia":   "text-emerald-700",
+  "sub-historia":   "text-amber-700",
   "sub-geografia":  "text-orange-400",
   "sub-portugues":  "text-rose-400",
   "sub-literatura": "text-pink-400",
@@ -51,15 +51,15 @@ export default function InstitutionPage({ params }: PageProps) {
   if (loadingInst || loadingSubjects) {
     return (
       <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-24 bg-zinc-800 rounded" />
+        <div className="h-4 w-24 bg-[#d1d5db] rounded-md" />
         <div className="space-y-3">
-          <div className="h-6 w-32 bg-zinc-800 rounded" />
-          <div className="h-12 w-96 bg-zinc-800 rounded" />
-          <div className="h-4 w-80 bg-zinc-800 rounded" />
+          <div className="h-6 w-32 bg-[#d1d5db] rounded-md" />
+          <div className="h-12 w-96 bg-[#d1d5db] rounded-md" />
+          <div className="h-4 w-80 bg-[#d1d5db] rounded-md" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-28 bg-zinc-800 rounded-sm" />
+            <div key={i} className="h-28 bg-[#d1d5db] rounded-md" />
           ))}
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function InstitutionPage({ params }: PageProps) {
   }
 
   if (!institution) {
-    return <div className="p-8 text-zinc-400">Instituicao nao encontrada.</div>;
+    return <div className="p-8 text-muted-foreground">Instituicao nao encontrada.</div>;
   }
 
   const subjectList = subjects ?? [];
@@ -122,14 +122,14 @@ export default function InstitutionPage({ params }: PageProps) {
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {subjectList.map((subject) => {
-              const colorClass = SUBJECT_COLORS[subject.subjectId] ?? "from-zinc-800/60 to-zinc-800/20 border-zinc-700/40 hover:border-zinc-500/60";
-              const iconColorClass = SUBJECT_ICON_COLORS[subject.subjectId] ?? "text-zinc-400";
+              const colorClass = SUBJECT_COLORS[subject.subjectId] ?? "from-gray-200/60 to-gray-200/20 border-gray-300/40 hover:border-gray-400/60";
+              const iconColorClass = SUBJECT_ICON_COLORS[subject.subjectId] ?? "text-gray-500";
 
               return (
                 <Link
                   key={subject.subjectId}
                   href={`/instituicoes/${institutionId}/materias/${subject.subjectId}`}
-                  className={`group relative flex flex-col gap-3 rounded-sm border bg-gradient-to-b p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/40 ${colorClass}`}
+                  className={`group relative flex flex-col gap-3 rounded-md border bg-gradient-to-b p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10 ${colorClass}`}
                 >
                   <SubjectIcon name={undefined} size={22} className={iconColorClass} />
 

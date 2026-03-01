@@ -26,21 +26,21 @@ export default function CheckoutPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="h-4 w-32 bg-[#d1d5db] rounded" />
         <div className="grid gap-8 lg:grid-cols-[1fr,380px]">
           <div className="space-y-4">
-            <div className="h-3 w-24 bg-zinc-800 rounded" />
-            <div className="h-8 w-80 bg-zinc-800 rounded" />
-            <div className="h-48 bg-zinc-800 rounded" />
+            <div className="h-3 w-24 bg-[#d1d5db] rounded" />
+            <div className="h-8 w-80 bg-[#d1d5db] rounded" />
+            <div className="h-48 bg-[#d1d5db] rounded" />
           </div>
-          <div className="h-64 bg-zinc-800 rounded" />
+          <div className="h-64 bg-[#d1d5db] rounded" />
         </div>
       </div>
     );
   }
 
   if (!classEvent) {
-    return <div className="p-8 text-zinc-400">Aula nao encontrada.</div>;
+    return <div className="p-8 text-muted-foreground">Aula nao encontrada.</div>;
   }
 
   const teacher = classEvent.teacherProfile;
@@ -159,7 +159,7 @@ export default function CheckoutPage({ params }: PageProps) {
             type="button"
             disabled={processing}
             onClick={handlePay}
-            className="flex w-full items-center justify-center gap-2.5 rounded-sm bg-brand-accent px-6 py-4 text-sm font-bold uppercase tracking-wider text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2.5 rounded-md bg-[#ea580c] px-6 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c] disabled:opacity-50"
           >
             <Lock size={14} />
             {processing ? "Processando..." : "Confirmar pagamento"}

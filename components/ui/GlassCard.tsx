@@ -6,17 +6,17 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverEffect?: boolean;
 }
 
-export function GlassCard({ 
-  children, 
-  className, 
+export function GlassCard({
+  children,
+  className,
   hoverEffect = true,
-  ...props 
+  ...props
 }: GlassCardProps) {
   return (
     <div
       className={cn(
-        "bg-surface border border-border p-6 transition-all duration-300 relative overflow-hidden",
-        hoverEffect && "hover:border-brand-accent/30 hover:-translate-y-0.5 hover:shadow-[0_0_30px_-10px_rgba(34,211,238,0.1)]",
+        "bg-white border border-[#d1d5db] p-6 rounded-lg shadow-sm transition-all duration-300 relative overflow-hidden",
+        hoverEffect && "hover:border-[#9ca3af] hover:shadow-md hover:-translate-y-0.5",
         className
       )}
       {...props}

@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Play, BookOpen, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Users, Clock } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { ContainerScroll } from "@/components/ui/container-scroll-animation";
 
 export function Hero() {
   const { user } = useAuth();
@@ -11,213 +12,213 @@ export function Hero() {
   const firstName = user?.name.split(" ")[0] ?? "";
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden px-4 sm:px-8">
-      {/* Industrial Grid Background */}
-      <div className="absolute inset-0 -z-10 grid-texture" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-background/90 to-background" />
+    <section className="relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f8f9fa] via-white to-[#f8f9fa]" />
 
-      {/* Subtle accent glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-accent/5 blur-[120px] -z-10" />
+      <ContainerScroll
+        titleComponent={
+          <div className="space-y-6">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] text-[#0f172a]">
+              {isLoggedIn ? (
+                <>
+                  Olá, {firstName}. <br />
+                  <span className="text-[#ea580c]">Vamos para o próximo aulão?</span>
+                </>
+              ) : (
+                <>
+                  Aprenda com quem já passou <br />
+                  <span className="text-[#ea580c]">pelo que você está vivendo.</span>
+                </>
+              )}
+            </h1>
 
-      <div className="container mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10 max-w-[1200px]">
-
-        {/* Text Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="space-y-8 text-center lg:text-left"
-        >
-          {/* Tag */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 border border-border bg-surface text-brand-accent text-xs font-semibold uppercase tracking-[0.15em] w-fit mx-auto lg:mx-0"
-          >
-            <Zap size={12} />
-            <span>{isLoggedIn ? "Seu Hub de Estudos" : "Hub de Aprendizado"}</span>
-          </motion.div>
-
-          <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
-            <span className="block bg-gradient-to-br from-white via-sky-200 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
+            <p className="text-base md:text-lg text-[#6b7280] max-w-2xl mx-auto leading-relaxed">
               {isLoggedIn
-                ? `Ola, ${firstName}. Vamos para o proximo aulao?`
-                : "Aprenda com quem ja passou pelo que voce esta vivendo."}
-            </span>
-          </h1>
+                ? "Seu perfil está pronto. Explore recomendações alinhadas às suas instituições e matérias."
+                : "Conecte-se com mentores experientes para mentorias e aulões ao vivo. Pague por aula, sem compromisso."}
+            </p>
 
-          <p className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
-            {isLoggedIn
-              ? "Seu perfil esta pronto. Explore recomendacoes alinhadas as suas instituicoes e materias."
-              : "Conecte-se com mentores experientes para mentorias e auloes ao vivo."}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
-            <Link
-              href="/explorar"
-              className="group relative px-7 py-3.5 bg-foreground text-background font-semibold text-sm transition-all hover:bg-foreground/90 active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden"
-            >
-              <span className="relative z-10">Explorar Aulas</span>
-              <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
-            </Link>
-
-            <Link
-              href={isLoggedIn ? "/aluno/perfil" : "/cadastro"}
-              className="px-7 py-3.5 border border-border text-foreground font-semibold text-sm hover:bg-surface hover:border-muted-foreground/30 transition-all flex items-center justify-center active:scale-[0.98]"
-            >
-              {isLoggedIn ? "Ajustar meu perfil" : "Criar conta"}
-            </Link>
-          </div>
-
-          {/* Value props */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            className="flex flex-wrap gap-2 pt-4 justify-center lg:justify-start"
-          >
-            {[
-              "Ao vivo",
-              "Pague por aula",
-              "Professores verificados",
-            ].map((prop) => (
-              <span
-                key={prop}
-                className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground"
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <Link
+                href="/explorar"
+                className="group relative px-7 py-3.5 bg-[#ea580c] text-white font-semibold text-sm transition-all hover:bg-[#c2410c] active:scale-[0.98] flex items-center justify-center gap-2 rounded-lg"
               >
-                <span className="h-1 w-1 rounded-full bg-brand-accent" />
-                {prop}
-              </span>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* 3D Book / Video Element */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="relative h-[420px] sm:h-[500px] w-full flex items-center justify-center"
-        >
-          <motion.div
-            animate={{
-              y: [0, -12, 0],
-              rotateY: [0, 2, 0],
-              rotateX: [0, -1, 0],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="relative"
-            style={{ perspective: "1000px" }}
-          >
-            {/* Book / Screen Container */}
-            <div className="relative w-[280px] h-[360px] sm:w-[320px] sm:h-[420px]" style={{ transformStyle: "preserve-3d" }}>
-              {/* Main face - Screen/Book */}
-              <div className="absolute inset-0 bg-surface border border-border overflow-hidden" style={{ transform: "rotateY(-8deg) rotateX(2deg)", transformStyle: "preserve-3d" }}>
-                {/* Screen content - video lesson mockup */}
-                <div className="p-4 h-full flex flex-col">
-                  {/* Top bar */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-2 h-2 bg-destructive" />
-                    <div className="w-2 h-2 bg-warning" />
-                    <div className="w-2 h-2 bg-success" />
-                    <div className="flex-1" />
-                    <div className="text-[10px] text-muted-foreground font-mono">LIVE</div>
-                    <div className="w-1.5 h-1.5 bg-destructive animate-pulse" />
-                  </div>
-
-                  {/* Video area */}
-                  <div className="flex-1 bg-background border border-border-subtle flex items-center justify-center relative overflow-hidden">
-                    {/* Scan line effect */}
-                    <div className="absolute inset-0 overflow-hidden">
-                      <div className="w-full h-px bg-brand-accent/20 animate-scan" />
-                    </div>
-
-                    {/* Play button */}
-                    <motion.div
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="w-14 h-14 sm:w-16 sm:h-16 border border-brand-accent/40 flex items-center justify-center accent-glow"
-                    >
-                      <Play size={20} className="text-brand-accent ml-0.5" fill="currentColor" />
-                    </motion.div>
-
-                    {/* Progress bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-border">
-                      <motion.div
-                        animate={{ width: ["0%", "65%"] }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                        className="h-full bg-brand-accent"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bottom info */}
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <BookOpen size={12} className="text-brand-accent" />
-                      <span className="text-xs font-medium text-foreground">Calculo Intensivo</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-[10px] px-2 py-0.5 bg-brand-accent/10 text-brand-accent border border-brand-accent/20 font-medium">INSPER</span>
-                      <span className="text-[10px] px-2 py-0.5 bg-surface-hover text-muted-foreground border border-border font-medium">50 vagas</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Edge glow effect */}
-                <div className="absolute inset-0 pointer-events-none border border-brand-accent/10" />
-              </div>
-
-              {/* Spine / Side edge */}
-              <div
-                className="absolute top-0 left-0 w-3 h-full bg-gradient-to-r from-surface-hover to-surface border-y border-l border-border"
-                style={{ transform: "rotateY(82deg) translateX(-1.5px)", transformOrigin: "left center" }}
-              />
-
-              {/* Reflection */}
-              <div
-                className="absolute left-0 right-0 h-[200px] bg-gradient-to-b from-brand-accent/8 to-transparent blur-sm"
-                style={{ top: "100%", transform: "scaleY(-0.4) rotateY(-8deg)", opacity: 0.3 }}
-              />
+                <span>Explorar Aulas</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href={isLoggedIn ? "/aluno/perfil" : "/cadastro"}
+                className="px-7 py-3.5 border border-[#d1d5db] text-[#0f172a] font-semibold text-sm hover:bg-[#f3f4f6] transition-all flex items-center justify-center active:scale-[0.98] rounded-lg"
+              >
+                {isLoggedIn ? "Ajustar meu perfil" : "Criar conta"}
+              </Link>
             </div>
 
-            {/* Floating elements */}
-            <motion.div
-              animate={{ y: [-8, 8, -8], x: [-3, 3, -3] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute -top-6 -right-8 px-3 py-2 bg-surface border border-border flex items-center gap-2"
-            >
-              <div className="w-2 h-2 bg-brand-accent" />
-              <span className="text-xs font-medium text-foreground font-mono">AO VIVO</span>
-            </motion.div>
+            {/* Value props */}
+            <div className="flex flex-wrap gap-2 pt-2 justify-center">
+              {["Ao vivo", "Pague por aula", "Professores verificados"].map((prop) => (
+                <span
+                  key={prop}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs font-medium text-[#6b7280]"
+                >
+                  <span className="h-1 w-1 rounded-full bg-[#ea580c]" />
+                  {prop}
+                </span>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        {/* Platform Mockup inside the animated card */}
+        <PlatformMockup />
+      </ContainerScroll>
 
-            <motion.div
-              animate={{ y: [6, -6, 6], x: [3, -3, 3] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              className="absolute -bottom-4 -left-10 px-3 py-2 bg-surface border border-border flex items-center gap-2"
-            >
-              <Zap size={12} className="text-brand-accent" />
-              <span className="text-xs font-medium text-foreground">R$ 149</span>
-            </motion.div>
+      {/* Bottom fade to page background */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8f9fa] to-transparent" />
+    </section>
+  );
+}
 
-            <motion.div
-              animate={{ y: [-5, 5, -5] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              className="absolute top-1/2 -right-14 px-3 py-2 bg-surface border border-border"
-            >
-              <span className="text-xs text-muted-foreground font-mono">34/50</span>
-            </motion.div>
-          </motion.div>
-        </motion.div>
+/* ── Platform Dashboard Mockup ── */
+function PlatformMockup() {
+  return (
+    <div className="h-full w-full bg-[#f8f9fa] p-3 md:p-6 overflow-hidden">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#0f172a] flex items-center justify-center">
+            <BookOpen size={14} className="text-white" />
+          </div>
+          <span className="font-display font-bold text-sm md:text-base text-[#0f172a]">docsens</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-4 text-xs text-[#6b7280] mr-4">
+            <span className="hover:text-[#0f172a] cursor-pointer">Explorar</span>
+            <span className="hover:text-[#0f172a] cursor-pointer">Meus Auloes</span>
+            <span className="hover:text-[#0f172a] cursor-pointer">Agenda</span>
+          </div>
+          <div className="w-7 h-7 rounded-full bg-[#ea580c] flex items-center justify-center">
+            <span className="text-[10px] font-bold text-white">DR</span>
+          </div>
+        </div>
       </div>
 
-      {/* Bottom divider */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-    </section>
+      {/* Search Bar */}
+      <div className="mb-4 md:mb-6">
+        <div className="flex items-center gap-2 px-3 py-2 bg-white border border-[#e5e7eb] rounded-lg">
+          <svg className="w-3.5 h-3.5 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span className="text-xs text-[#9ca3af]">Buscar auloes, professores, instituicoes...</span>
+        </div>
+      </div>
+
+      {/* Section Title */}
+      <div className="flex items-center justify-between mb-3 md:mb-4">
+        <h3 className="font-display font-bold text-xs md:text-sm text-[#0f172a]">Proximos Auloes</h3>
+        <span className="text-[10px] md:text-xs text-[#ea580c] font-medium cursor-pointer">Ver todos</span>
+      </div>
+
+      {/* Class Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        <ClassCard
+          title="Calculo Intensivo"
+          institution="INSPER"
+          teacher="Prof. Marina S."
+          price="R$ 149"
+          spots="12/50"
+          time="Seg, 19h"
+          color="#0f172a"
+          live
+        />
+        <ClassCard
+          title="Direito Constitucional"
+          institution="Mackenzie"
+          teacher="Prof. Carlos R."
+          price="R$ 89"
+          spots="34/40"
+          time="Ter, 20h"
+          color="#1e40af"
+          live={false}
+        />
+        <ClassCard
+          title="Anatomia Humana"
+          institution="Einstein"
+          teacher="Prof. Ana L."
+          price="R$ 199"
+          spots="8/30"
+          time="Qua, 18h"
+          color="#7c3aed"
+          live={false}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ClassCard({
+  title,
+  institution,
+  teacher,
+  price,
+  spots,
+  time,
+  color,
+  live,
+}: {
+  title: string;
+  institution: string;
+  teacher: string;
+  price: string;
+  spots: string;
+  time: string;
+  color: string;
+  live: boolean;
+}) {
+  return (
+    <div className="bg-white border border-[#e5e7eb] rounded-xl p-3 md:p-4 space-y-2.5 hover:border-[#d1d5db] transition-colors">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: color + "12" }}
+        >
+          <BookOpen size={14} style={{ color }} />
+        </div>
+        {live && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-red-50 border border-red-200 rounded text-[9px] font-bold text-red-600">
+            <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
+            LIVE
+          </span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div>
+        <h4 className="font-display font-bold text-xs md:text-sm text-[#0f172a] leading-tight">{title}</h4>
+        <p className="text-[10px] md:text-xs text-[#6b7280] mt-0.5">{teacher}</p>
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-1.5">
+        <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-[#f3f4f6] text-[#0f172a] font-medium rounded border border-[#e5e7eb]">
+          {institution}
+        </span>
+        <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-[#f3f4f6] text-[#6b7280] font-medium rounded border border-[#e5e7eb] flex items-center gap-0.5">
+          <Users size={8} />
+          {spots}
+        </span>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-1 border-t border-[#f3f4f6]">
+        <div className="flex items-center gap-1 text-[10px] md:text-xs text-[#6b7280]">
+          <Clock size={10} />
+          <span>{time}</span>
+        </div>
+        <span className="font-display font-bold text-xs md:text-sm text-[#ea580c]">{price}</span>
+      </div>
+    </div>
   );
 }

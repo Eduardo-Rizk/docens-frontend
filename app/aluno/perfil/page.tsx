@@ -40,22 +40,22 @@ export default function StudentProfilePage() {
     return (
       <div className="animate-pulse space-y-8 p-4">
         <div className="space-y-3">
-          <div className="h-10 w-64 bg-zinc-800 rounded" />
-          <div className="h-4 w-96 bg-zinc-800 rounded" />
+          <div className="h-10 w-64 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-96 bg-[#d1d5db] rounded" />
         </div>
         <div className="grid gap-8 lg:grid-cols-[1fr,320px]">
           <div className="space-y-6">
-            <div className="h-16 bg-zinc-800 rounded" />
-            <div className="h-24 bg-zinc-800 rounded" />
+            <div className="h-16 bg-[#d1d5db] rounded" />
+            <div className="h-24 bg-[#d1d5db] rounded" />
           </div>
-          <div className="h-40 bg-zinc-800 rounded" />
+          <div className="h-40 bg-[#d1d5db] rounded" />
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return <div className="p-8 text-zinc-400">Perfil nao encontrado.</div>;
+    return <div className="p-8 text-muted-foreground">Perfil nao encontrado.</div>;
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -121,7 +121,7 @@ export default function StudentProfilePage() {
           <button
             type="submit"
             disabled={updateProfile.isPending}
-            className="flex items-center gap-2 rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md bg-[#ea580c] px-6 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-[#c2410c] disabled:opacity-50"
           >
             {updateProfile.isSuccess ? (
               <>

@@ -243,7 +243,7 @@ export default function RegisterPage() {
                   id="photo"
                   type="file"
                   accept="image/*"
-                  className="block w-full text-xs text-muted-foreground file:mr-3 file:border file:border-border file:bg-surface file:px-3 file:py-2 file:text-[11px] file:font-semibold file:text-foreground hover:file:border-zinc-600"
+                  className="block w-full text-xs text-muted-foreground file:mr-3 file:border file:border-border file:bg-surface file:px-3 file:py-2 file:text-[11px] file:font-semibold file:text-foreground hover:file:border-[#9ca3af]"
                   onChange={(e) => handlePhotoChange(e.target.files?.[0])}
                 />
               </div>
@@ -275,7 +275,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-brand-accent text-background font-bold text-xs uppercase tracking-[0.14em] py-3.5 hover:opacity-90 active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
+          className="w-full bg-[#ea580c] text-white font-bold text-xs uppercase tracking-[0.14em] py-3.5 rounded-md hover:bg-[#c2410c] active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
         >
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
