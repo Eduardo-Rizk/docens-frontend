@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Login: POST to Next.js API route (NOT the proxy) which sets HttpOnly cookie
   const loginMutation = useMutation({
     mutationFn: (data: { email: string; password: string }) =>
-      apiFetch<{ token: string; user: AuthUser }>('/api/auth/login', {
+      apiFetch<{ token: string; user: AuthUser }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Register: POST to Next.js API route which sets HttpOnly cookie
   const registerMutation = useMutation({
     mutationFn: (data: RegisterData) =>
-      apiFetch<{ token: string; user: AuthUser }>('/api/auth/register', {
+      apiFetch<{ token: string; user: AuthUser }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
