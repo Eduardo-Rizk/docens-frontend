@@ -19,23 +19,23 @@ export default function TeacherDashboardPage() {
     return (
       <div className="animate-pulse space-y-8 p-4">
         <div className="space-y-3">
-          <div className="h-10 w-48 bg-zinc-800 rounded" />
-          <div className="h-4 w-64 bg-zinc-800 rounded" />
+          <div className="h-10 w-48 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-64 bg-[#d1d5db] rounded" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-zinc-800 rounded-sm" />
+            <div key={i} className="h-32 bg-[#d1d5db] rounded-sm" />
           ))}
         </div>
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-24 bg-zinc-800 rounded-sm" />
+          <div key={i} className="h-24 bg-[#d1d5db] rounded-sm" />
         ))}
       </div>
     );
   }
 
   if (!dashboard) {
-    return <div className="p-8 text-zinc-400">Dashboard nao disponivel.</div>;
+    return <div className="p-8 text-muted-foreground">Dashboard nao disponivel.</div>;
   }
 
   return (

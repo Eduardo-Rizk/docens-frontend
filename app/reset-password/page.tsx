@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl" />
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
-              <CheckCircle size={32} className="text-emerald-400" />
+              <CheckCircle size={32} className="text-emerald-700" />
             </div>
           </div>
 
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={resetPassword.isPending}
-          className="w-full bg-brand-accent text-background font-bold text-xs uppercase tracking-[0.14em] py-3.5 hover:opacity-90 active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
+          className="w-full bg-[#ea580c] text-white font-bold text-xs uppercase tracking-[0.14em] py-3.5 rounded-md hover:bg-[#c2410c] active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
         >
           {resetPassword.isPending ? "Enviando..." : "Enviar link de redefinicao"}
         </button>

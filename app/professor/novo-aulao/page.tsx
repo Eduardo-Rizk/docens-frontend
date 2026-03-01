@@ -57,7 +57,7 @@ export default function NovoAulaoPage() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-sm border border-brand-accent/30 bg-brand-accent/10 text-brand-accent">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-md border border-[#ea580c]/30 bg-[#ea580c]/10 text-[#ea580c]">
           <CheckCircle size={28} />
         </div>
         <h2 className="font-display text-3xl text-foreground">Aulao criado!</h2>
@@ -67,13 +67,13 @@ export default function NovoAulaoPage() {
         <div className="flex gap-3 mt-8">
           <button
             onClick={() => router.push("/professor/auloes")}
-            className="rounded-sm bg-brand-accent px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 transition-all"
+            className="rounded-md bg-[#ea580c] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#c2410c] transition-all"
           >
             Ver meus auloes
           </button>
           <button
             onClick={() => setSubmitted(false)}
-            className="rounded-sm border border-border bg-surface px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:border-zinc-600 transition-all"
+            className="rounded-sm border border-border bg-surface px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:border-[#9ca3af] transition-all"
           >
             Criar outro aulao
           </button>
@@ -216,7 +216,7 @@ export default function NovoAulaoPage() {
           <button
             type="submit"
             disabled={createClassEvent.isPending}
-            className="rounded-sm bg-brand-accent px-6 py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 disabled:opacity-50"
+            className="rounded-sm bg-[#ea580c] px-6 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-[#c2410c] disabled:opacity-50"
           >
             {createClassEvent.isPending ? "Criando..." : "Criar aulao"}
           </button>

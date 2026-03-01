@@ -36,18 +36,18 @@ export default function TeacherProfilePage({ params }: PageProps) {
   if (loadingInst || loadingDetail) {
     return (
       <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="h-4 w-32 bg-[#d1d5db] rounded" />
         <div className="flex gap-6">
-          <div className="h-20 w-20 bg-zinc-800 rounded-sm" />
+          <div className="h-20 w-20 bg-[#d1d5db] rounded-sm" />
           <div className="space-y-3 flex-1">
-            <div className="h-10 w-64 bg-zinc-800 rounded" />
-            <div className="h-4 w-48 bg-zinc-800 rounded" />
-            <div className="h-4 w-80 bg-zinc-800 rounded" />
+            <div className="h-10 w-64 bg-[#d1d5db] rounded" />
+            <div className="h-4 w-48 bg-[#d1d5db] rounded" />
+            <div className="h-4 w-80 bg-[#d1d5db] rounded" />
           </div>
         </div>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-zinc-800 rounded-sm" />
+            <div key={i} className="h-32 bg-[#d1d5db] rounded-sm" />
           ))}
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function TeacherProfilePage({ params }: PageProps) {
   }
 
   if (!institution || !detail) {
-    return <div className="p-8 text-zinc-400">Professor nao encontrado.</div>;
+    return <div className="p-8 text-muted-foreground">Professor nao encontrado.</div>;
   }
 
   const teacher = detail.teacherProfile;
@@ -114,7 +114,7 @@ export default function TeacherProfilePage({ params }: PageProps) {
             {" . "}
             {Object.keys(detail.classesBySubject).length} materia{Object.keys(detail.classesBySubject).length !== 1 ? "s" : ""}
             {totalOpen > 0 && (
-              <span className="ml-2 text-emerald-400">. {totalOpen} com vaga</span>
+              <span className="ml-2 text-emerald-700">. {totalOpen} com vaga</span>
             )}
           </p>
         </div>
@@ -160,7 +160,7 @@ export default function TeacherProfilePage({ params }: PageProps) {
                     return (
                       <div
                         key={event.id}
-                        className="flex flex-col gap-5 rounded-sm border border-border bg-surface p-6 transition-colors duration-200 hover:border-zinc-700 sm:flex-row sm:items-center sm:gap-8"
+                        className="flex flex-col gap-5 rounded-md border border-border bg-surface p-6 transition-colors duration-200 hover:border-[#9ca3af] hover:shadow-md sm:flex-row sm:items-center sm:gap-8"
                       >
                         {/* Info */}
                         <div className="min-w-0 flex-1 space-y-2">
@@ -190,11 +190,11 @@ export default function TeacherProfilePage({ params }: PageProps) {
                               {formatPrice(event.priceCents)}
                             </p>
                             {sold ? (
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
                                 Esgotado
                               </p>
                             ) : (
-                              <p className="flex items-center justify-end gap-1 text-[10px] font-medium text-emerald-400">
+                              <p className="flex items-center justify-end gap-1 text-[10px] font-medium text-emerald-700">
                                 <Users size={10} />
                                 {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""}
                               </p>

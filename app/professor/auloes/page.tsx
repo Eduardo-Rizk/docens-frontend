@@ -32,7 +32,7 @@ function ClassEventRow({ classEvent, showBuyers = true }: { classEvent: any; sho
 
   return (
     <article
-      className="group relative flex flex-col gap-4 rounded-sm border border-border bg-surface p-5 transition-all hover:border-zinc-700 hover:bg-zinc-900/60 sm:flex-row sm:items-center sm:gap-6"
+      className="group relative flex flex-col gap-4 rounded-md border border-border bg-surface p-5 transition-all hover:border-[#9ca3af] hover:shadow-md sm:flex-row sm:items-center sm:gap-6"
     >
       {/* Date/time */}
       <div className="w-28 shrink-0 space-y-0.5">
@@ -100,11 +100,11 @@ export default function TeacherAuloesPage() {
     return (
       <div className="animate-pulse space-y-8 p-4">
         <div className="space-y-3">
-          <div className="h-10 w-48 bg-zinc-800 rounded" />
-          <div className="h-4 w-64 bg-zinc-800 rounded" />
+          <div className="h-10 w-48 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-64 bg-[#d1d5db] rounded" />
         </div>
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-zinc-800 rounded-sm" />
+          <div key={i} className="h-24 bg-[#d1d5db] rounded-sm" />
         ))}
       </div>
     );
@@ -148,7 +148,7 @@ export default function TeacherAuloesPage() {
           </p>
           <Link
             href="/professor/novo-aulao"
-            className="mt-6 inline-flex items-center gap-2 rounded-sm bg-brand-accent px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-black hover:brightness-110 transition-all"
+            className="mt-6 inline-flex items-center gap-2 rounded-md bg-[#ea580c] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#c2410c] transition-all"
           >
             Criar aulao
           </Link>

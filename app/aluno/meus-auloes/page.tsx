@@ -39,7 +39,7 @@ function StatusBadge({
   if (access === "WAITING_RELEASE") {
     return (
       <div className="flex flex-col items-end gap-1">
-        <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
           <CheckCircle size={10} />
           Vaga garantida
         </span>
@@ -53,7 +53,7 @@ function StatusBadge({
 
   if (access === "PENDING_PAYMENT") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+      <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
         <AlertCircle size={10} />
         Pagamento pendente
       </span>
@@ -62,7 +62,7 @@ function StatusBadge({
 
   if (access === "CAN_ENTER") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+      <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
         <Radio size={10} />
         Pronto para entrar
       </span>
@@ -110,7 +110,7 @@ function ClassRow({
           ? "border-border/50 bg-surface/40 hover:border-border hover:bg-surface"
           : confirmed
           ? "border-brand-accent/20 bg-brand-accent/[0.03] hover:border-brand-accent/40 hover:bg-brand-accent/[0.06]"
-          : "border-border bg-surface hover:border-zinc-700 hover:bg-zinc-900/60"
+          : "border-border bg-surface hover:border-[#9ca3af] hover:bg-[#f3f4f6]"
       }`}
     >
       {confirmed && !live && (
@@ -183,12 +183,12 @@ export default function StudentAgendaPage() {
     return (
       <div className="animate-pulse space-y-8 p-4">
         <div className="space-y-3">
-          <div className="h-3 w-20 bg-zinc-800 rounded" />
-          <div className="h-10 w-48 bg-zinc-800 rounded" />
-          <div className="h-4 w-60 bg-zinc-800 rounded" />
+          <div className="h-3 w-20 bg-[#d1d5db] rounded" />
+          <div className="h-10 w-48 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-60 bg-[#d1d5db] rounded" />
         </div>
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-zinc-800 rounded-sm" />
+          <div key={i} className="h-24 bg-[#d1d5db] rounded-sm" />
         ))}
       </div>
     );

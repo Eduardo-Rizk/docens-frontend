@@ -25,25 +25,25 @@ export default function ClassEventPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="h-4 w-32 bg-[#d1d5db] rounded" />
         <div className="flex flex-wrap gap-2">
-          <div className="h-6 w-20 bg-zinc-800 rounded" />
-          <div className="h-6 w-20 bg-zinc-800 rounded" />
+          <div className="h-6 w-20 bg-[#d1d5db] rounded" />
+          <div className="h-6 w-20 bg-[#d1d5db] rounded" />
         </div>
         <div className="grid gap-8 lg:grid-cols-[1fr,340px]">
           <div className="space-y-4">
-            <div className="h-12 w-96 bg-zinc-800 rounded" />
-            <div className="h-24 w-full bg-zinc-800 rounded" />
-            <div className="h-32 w-full bg-zinc-800 rounded" />
+            <div className="h-12 w-96 bg-[#d1d5db] rounded" />
+            <div className="h-24 w-full bg-[#d1d5db] rounded" />
+            <div className="h-32 w-full bg-[#d1d5db] rounded" />
           </div>
-          <div className="h-80 bg-zinc-800 rounded" />
+          <div className="h-80 bg-[#d1d5db] rounded" />
         </div>
       </div>
     );
   }
 
   if (!classEvent) {
-    return <div className="p-8 text-zinc-400">Aula nao encontrada.</div>;
+    return <div className="p-8 text-muted-foreground">Aula nao encontrada.</div>;
   }
 
   const soldOut = classEvent.soldSeats >= classEvent.capacity;
@@ -143,7 +143,7 @@ export default function ClassEventPage({ params }: PageProps) {
               {formatPrice(classEvent.priceCents)}
             </p>
             {!soldOut && (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <p className="flex items-center gap-1.5 text-xs text-emerald-700">
                 <Users size={11} />
                 {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""} restante{spotsLeft !== 1 ? "s" : ""}
               </p>
@@ -154,7 +154,7 @@ export default function ClassEventPage({ params }: PageProps) {
           {!soldOut && user && (
             <Link
               href={`/checkout/${classEvent.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-sm bg-brand-accent px-4 py-4 text-sm font-bold uppercase tracking-wider text-black transition-opacity hover:opacity-90"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
             >
               Garanta sua vaga . {formatPrice(classEvent.priceCents)}
             </Link>
@@ -163,14 +163,14 @@ export default function ClassEventPage({ params }: PageProps) {
           {!soldOut && !user && (
             <Link
               href={`/login?redirect=/auloes/${classEvent.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-sm bg-brand-accent px-4 py-4 text-sm font-bold uppercase tracking-wider text-black transition-opacity hover:opacity-90"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
             >
               Entrar para comprar
             </Link>
           )}
 
           {soldOut && (
-            <div className="w-full rounded-sm border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-amber-400">
+            <div className="w-full rounded-sm border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-amber-700">
               Esgotado
             </div>
           )}

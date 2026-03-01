@@ -40,21 +40,21 @@ export function TopNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[#1e293b] bg-[#0f172a] text-white backdrop-blur-xl">
         {/* Accent line top */}
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-brand-accent/50 to-transparent" />
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#ea580c]/50 to-transparent" />
 
         <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between px-6 py-4 sm:px-8">
           {/* Logo */}
           <Link href="/" className="group flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center bg-foreground">
-              <span className="font-sans text-xs font-black text-background tracking-tighter">DS</span>
+            <div className="flex h-8 w-8 items-center justify-center bg-white rounded">
+              <span className="font-sans text-xs font-black text-[#0f172a] tracking-tighter">DS</span>
             </div>
             <div className="flex flex-col">
-              <span className="font-sans text-base font-bold tracking-tight text-foreground leading-none">
+              <span className="font-sans text-base font-bold tracking-tight text-white leading-none">
                 DOCENS
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent leading-none mt-0.5">
+              <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#ea580c] leading-none mt-0.5">
                 live classes
               </span>
             </div>
@@ -71,15 +71,15 @@ export function TopNav() {
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium transition-colors",
                     active
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "text-white"
+                      : "text-white/70 hover:text-white"
                   )}
                 >
                   {item.label}
                   {active && (
                     <motion.div
                       layoutId="nav-indicator"
-                      className="absolute bottom-0 left-2 right-2 h-px bg-brand-accent"
+                      className="absolute bottom-0 left-2 right-2 h-px bg-[#ea580c]"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
@@ -93,7 +93,7 @@ export function TopNav() {
             {!isLoading && !user && (
               <Link
                 href="/login"
-                className="hidden md:flex items-center gap-2 px-5 py-2 text-sm font-semibold text-background bg-foreground hover:bg-foreground/90 transition-colors"
+                className="hidden md:flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] transition-colors rounded-md"
               >
                 Entrar
                 <ArrowUpRight size={14} />
@@ -102,10 +102,10 @@ export function TopNav() {
 
             {!isLoading && user && (
               <div className="hidden md:flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">{user.name}</span>
+                <span className="text-sm text-white/70">{user.name}</span>
                 <button
                   onClick={logout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-border hover:border-zinc-600 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white border border-white/20 hover:border-white/40 transition-colors rounded-md"
                 >
                   <LogOut size={12} />
                   Sair
@@ -116,7 +116,7 @@ export function TopNav() {
             {/* Mobile toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 text-foreground"
+              className="md:hidden p-2 text-white"
               aria-label="Menu"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -133,7 +133,7 @@ export function TopNav() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-[65px] z-40 border-b border-border bg-background/95 backdrop-blur-xl md:hidden"
+            className="fixed inset-x-0 top-[65px] z-40 border-b border-[#1e293b] bg-[#0f172a]/95 backdrop-blur-xl md:hidden"
           >
             <nav className="flex flex-col px-6 py-4 gap-1">
               {navItems.map((item) => {
@@ -146,8 +146,8 @@ export function TopNav() {
                     className={cn(
                       "px-4 py-3 text-sm font-medium border-l-2 transition-colors",
                       active
-                        ? "border-brand-accent text-foreground bg-surface"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                        ? "border-[#ea580c] text-white bg-white/10"
+                        : "border-transparent text-white/70 hover:text-white hover:border-white/20"
                     )}
                   >
                     {item.label}
@@ -158,7 +158,7 @@ export function TopNav() {
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-background bg-foreground"
+                  className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-[#ea580c] hover:bg-[#c2410c] rounded-md"
                 >
                   Entrar
                   <ArrowUpRight size={14} />
@@ -166,7 +166,7 @@ export function TopNav() {
               ) : (
                 <button
                   onClick={() => { setMobileOpen(false); logout(); }}
-                  className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-muted-foreground border border-border"
+                  className="mt-3 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white/70 border border-white/20 rounded-md"
                 >
                   <LogOut size={14} />
                   Sair

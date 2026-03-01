@@ -18,21 +18,21 @@ export default function CompradoresPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-32 bg-zinc-800 rounded" />
+        <div className="h-4 w-32 bg-[#d1d5db] rounded" />
         <div className="space-y-3">
-          <div className="h-3 w-40 bg-zinc-800 rounded" />
-          <div className="h-8 w-80 bg-zinc-800 rounded" />
-          <div className="h-4 w-48 bg-zinc-800 rounded" />
+          <div className="h-3 w-40 bg-[#d1d5db] rounded" />
+          <div className="h-8 w-80 bg-[#d1d5db] rounded" />
+          <div className="h-4 w-48 bg-[#d1d5db] rounded" />
         </div>
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-16 bg-zinc-800 rounded-sm" />
+          <div key={i} className="h-16 bg-[#d1d5db] rounded-sm" />
         ))}
       </div>
     );
   }
 
   if (!data) {
-    return <div className="p-8 text-zinc-400">Dados nao encontrados.</div>;
+    return <div className="p-8 text-muted-foreground">Dados nao encontrados.</div>;
   }
 
   const { classEvent, institution, subject, paidCount, buyers } = data;
