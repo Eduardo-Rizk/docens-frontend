@@ -17,7 +17,7 @@ export function useTeacherDashboard() {
             title: string
             startsAt: string
             priceCents: number
-            capacity: number
+            capacity: number | null
             soldSeats: number
             publicationStatus: string
           }
@@ -37,7 +37,7 @@ export interface TeacherClassEvent {
   startsAt: string
   durationMin: number
   priceCents: number
-  capacity: number
+  capacity: number | null
   soldSeats: number
   publicationStatus: string
   meetingStatus: string

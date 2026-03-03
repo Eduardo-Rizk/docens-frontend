@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
-import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
+import { useInstitutions, useInstitutionSubjects } from "@/lib/queries/institutions";
 import { useCreateClassEvent } from "@/lib/queries/teacher";
 
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -25,8 +25,11 @@ const selectCls =
 
 export default function NovoAulaoPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState("");
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [unlimitedCapacity, setUnlimitedCapacity] = useState(false);
   const { data: institutions } = useInstitutions();
-  const { data: subjects } = useSubjects();
+  const { data: subjects } = useInstitutionSubjects(selectedInstitutionId);
   const createClassEvent = useCreateClassEvent();
   const router = useRouter();
 
@@ -41,11 +44,11 @@ export default function NovoAulaoPage() {
       {
         title: form.get("titulo") as string,
         description: form.get("descricao") as string,
-        institutionId: form.get("instituicao") as string,
-        subjectId: form.get("materia") as string,
+        institutionId: selectedInstitutionId,
+        subjectId: selectedSubjectId,
         startsAt,
         durationMin: Number(form.get("duracao")),
-        capacity: Number(form.get("capacidade")),
+        capacity: unlimitedCapacity ? null : Number(form.get("capacidade")),
         priceCents: Math.round(Number(form.get("preco")) * 100),
       },
       {
@@ -60,7 +63,7 @@ export default function NovoAulaoPage() {
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-md border border-[#ea580c]/30 bg-[#ea580c]/10 text-[#ea580c]">
           <CheckCircle size={28} />
         </div>
-        <h2 className="font-display text-3xl text-foreground">Aulao criado!</h2>
+        <h2 className="font-display text-3xl text-foreground">Aulão criado!</h2>
         <p className="mt-2 text-base text-muted-foreground">
           Seu rascunho foi salvo. Revise os detalhes antes de publicar.
         </p>
@@ -69,13 +72,13 @@ export default function NovoAulaoPage() {
             onClick={() => router.push("/professor/auloes")}
             className="rounded-md bg-[#ea580c] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#c2410c] transition-all"
           >
-            Ver meus auloes
+            Ver meus aulões
           </button>
           <button
             onClick={() => setSubmitted(false)}
             className="rounded-sm border border-border bg-surface px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:border-[#9ca3af] transition-all"
           >
-            Criar outro aulao
+            Criar outro aulão
           </button>
         </div>
       </div>
@@ -86,7 +89,7 @@ export default function NovoAulaoPage() {
     <div className="space-y-10">
       <header className="space-y-1">
         <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
-          Novo Aulao
+          Novo Aulão
         </h1>
         <p className="text-base text-muted-foreground">
           Preencha os dados e publique quando estiver pronto
@@ -99,19 +102,19 @@ export default function NovoAulaoPage() {
           {/* Left column */}
           <div className="space-y-6">
             <div className="space-y-2">
-              <FieldLabel htmlFor="titulo">Titulo do aulao</FieldLabel>
+              <FieldLabel htmlFor="titulo">Título do aulão</FieldLabel>
               <input
                 id="titulo"
                 name="titulo"
                 type="text"
                 required
                 className={inputCls}
-                placeholder="Ex: Calculo Intensivo: Limites e Derivadas"
+                placeholder="Ex: Cálculo Intensivo: Limites e Derivadas"
               />
             </div>
 
             <div className="space-y-2">
-              <FieldLabel htmlFor="descricao">Descricao</FieldLabel>
+              <FieldLabel htmlFor="descricao">Descrição</FieldLabel>
               <textarea
                 id="descricao"
                 name="descricao"
@@ -123,9 +126,19 @@ export default function NovoAulaoPage() {
             </div>
 
             <div className="space-y-2">
-              <FieldLabel htmlFor="instituicao">Instituicao</FieldLabel>
-              <select id="instituicao" name="instituicao" required className={selectCls}>
-                <option value="">Selecione uma instituicao</option>
+              <FieldLabel htmlFor="instituicao">Instituição</FieldLabel>
+              <select
+                id="instituicao"
+                name="instituicao"
+                required
+                className={selectCls}
+                value={selectedInstitutionId}
+                onChange={(e) => {
+                  setSelectedInstitutionId(e.target.value);
+                  setSelectedSubjectId("");
+                }}
+              >
+                <option value="">Selecione uma instituição</option>
                 {(institutions ?? []).map((inst) => (
                   <option key={inst.id} value={inst.id}>
                     {inst.name}
@@ -135,12 +148,20 @@ export default function NovoAulaoPage() {
             </div>
 
             <div className="space-y-2">
-              <FieldLabel htmlFor="materia">Materia</FieldLabel>
-              <select id="materia" name="materia" required className={selectCls}>
-                <option value="">Selecione uma materia</option>
+              <FieldLabel htmlFor="materia">Matéria</FieldLabel>
+              <select
+                id="materia"
+                name="materia"
+                required
+                className={selectCls}
+                value={selectedSubjectId}
+                onChange={(e) => setSelectedSubjectId(e.target.value)}
+                disabled={!selectedInstitutionId}
+              >
+                <option value="">Selecione uma matéria</option>
                 {(subjects ?? []).map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.name}
+                  <option key={sub.subjectId} value={sub.subjectId}>
+                    {sub.subjectName}
                   </option>
                 ))}
               </select>
@@ -155,13 +176,13 @@ export default function NovoAulaoPage() {
                 <input id="data" name="data" type="date" required className={inputCls} />
               </div>
               <div className="space-y-2">
-                <FieldLabel htmlFor="horario">Horario</FieldLabel>
+                <FieldLabel htmlFor="horario">Horário</FieldLabel>
                 <input id="horario" name="horario" type="time" required className={inputCls} />
               </div>
             </div>
 
             <div className="space-y-2">
-              <FieldLabel htmlFor="duracao">Duracao (minutos)</FieldLabel>
+              <FieldLabel htmlFor="duracao">Duração (minutos)</FieldLabel>
               <input
                 id="duracao"
                 name="duracao"
@@ -177,20 +198,30 @@ export default function NovoAulaoPage() {
 
             <div className="space-y-2">
               <FieldLabel htmlFor="capacidade">Capacidade (vagas)</FieldLabel>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={unlimitedCapacity}
+                  onChange={(e) => setUnlimitedCapacity(e.target.checked)}
+                  className="rounded border-border"
+                />
+                Sem limite de vagas
+              </label>
               <input
                 id="capacidade"
                 name="capacidade"
                 type="number"
                 min={1}
                 max={500}
-                required
-                className={inputCls}
+                required={!unlimitedCapacity}
+                disabled={unlimitedCapacity}
+                className={`${inputCls} ${unlimitedCapacity ? "opacity-50 cursor-not-allowed" : ""}`}
                 placeholder="Ex: 50"
               />
             </div>
 
             <div className="space-y-2">
-              <FieldLabel htmlFor="preco">Preco (R$)</FieldLabel>
+              <FieldLabel htmlFor="preco">Preço (R$)</FieldLabel>
               <input
                 id="preco"
                 name="preco"
@@ -202,7 +233,7 @@ export default function NovoAulaoPage() {
                 placeholder="Ex: 149.00"
               />
               <p className="text-[10px] text-muted-foreground/50">
-                O valor em reais que os alunos pagarao para se inscrever
+                O valor em reais que os alunos pagarão para se inscrever
               </p>
             </div>
           </div>
@@ -218,10 +249,10 @@ export default function NovoAulaoPage() {
             disabled={createClassEvent.isPending}
             className="rounded-sm bg-[#ea580c] px-6 py-3 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-[#c2410c] disabled:opacity-50"
           >
-            {createClassEvent.isPending ? "Criando..." : "Criar aulao"}
+            {createClassEvent.isPending ? "Criando..." : "Criar aulão"}
           </button>
           <p className="text-xs text-muted-foreground">
-            Sera salvo como rascunho -- voce publica quando quiser
+            Será salvo como rascunho -- você publica quando quiser
           </p>
         </div>
       </form>
