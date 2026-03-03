@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Radio, CheckCircle, AlertCircle, Lock } from "lucide-react";
+import { ArrowRight, Radio, CheckCircle, AlertCircle, Lock, Sparkles } from "lucide-react";
 import { useStudentAgenda, type AgendaItem } from "@/lib/queries/student";
-import { formatLongDate, formatTime } from "@/lib/format";
+import { formatLongDate, formatTime, formatPrice } from "@/lib/format";
 
 // --- Status badge ---
 
@@ -13,10 +13,12 @@ function StatusBadge({
   access,
   isLive,
   isPast,
+  priceCents,
 }: {
   access: AccessState;
   isLive: boolean;
   isPast: boolean;
+  priceCents?: number;
 }) {
   if (isPast) {
     return (
@@ -39,7 +41,7 @@ function StatusBadge({
   if (access === "WAITING_RELEASE") {
     return (
       <div className="flex flex-col items-end gap-1">
-        <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+        <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
           <CheckCircle size={10} />
           Vaga garantida
         </span>
@@ -53,7 +55,7 @@ function StatusBadge({
 
   if (access === "PENDING_PAYMENT") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+      <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-400">
         <AlertCircle size={10} />
         Pagamento pendente
       </span>
@@ -62,9 +64,18 @@ function StatusBadge({
 
   if (access === "CAN_ENTER") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+      <span className="inline-flex items-center gap-1.5 rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
         <Radio size={10} />
         Pronto para entrar
+      </span>
+    );
+  }
+
+  // NEEDS_PURCHASE — show price as CTA
+  if (priceCents !== undefined) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-sm border border-brand-accent/30 bg-brand-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-accent">
+        {formatPrice(priceCents)}
       </span>
     );
   }
@@ -73,18 +84,6 @@ function StatusBadge({
 }
 
 // --- Class row ---
-
-function isLiveNow(startsAt: string, durationMin: number) {
-  const start = new Date(startsAt).getTime();
-  const end = start + durationMin * 60 * 1000;
-  const now = Date.now();
-  return now >= start && now <= end;
-}
-
-function isEventPast(startsAt: string, durationMin: number) {
-  const end = new Date(startsAt).getTime() + durationMin * 60 * 1000;
-  return Date.now() > end;
-}
 
 function ClassRow({
   item,
@@ -98,7 +97,18 @@ function ClassRow({
   const past = section === "history";
   const access = item.accessState;
   const confirmed = access === "WAITING_RELEASE" || access === "CAN_ENTER";
+  const pending = access === "PENDING_PAYMENT";
+  const needsPurchase = access === "NEEDS_PURCHASE";
   const muted = past;
+
+  // Left border color by state
+  const leftBorderColor = live
+    ? "bg-red-500"
+    : confirmed
+    ? "bg-emerald-500"
+    : pending
+    ? "bg-amber-500"
+    : "";
 
   return (
     <Link
@@ -109,12 +119,17 @@ function ClassRow({
           : muted
           ? "border-border/50 bg-surface/40 hover:border-border hover:bg-surface"
           : confirmed
-          ? "border-brand-accent/20 bg-brand-accent/[0.03] hover:border-brand-accent/40 hover:bg-brand-accent/[0.06]"
-          : "border-border bg-surface hover:border-[#9ca3af] hover:bg-[#f3f4f6]"
+          ? "border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/40"
+          : pending
+          ? "border-amber-500/20 bg-amber-500/[0.03] hover:border-amber-500/40"
+          : needsPurchase
+          ? "border-border/60 bg-surface/60 hover:border-brand-accent/30 hover:bg-brand-accent/[0.02]"
+          : "border-border bg-surface hover:border-[#9ca3af]"
       }`}
     >
-      {confirmed && !live && (
-        <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand-accent/60 via-brand-accent/30 to-transparent" />
+      {/* Colored left border strip */}
+      {leftBorderColor && (
+        <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${leftBorderColor}`} />
       )}
 
       {/* Date/time column */}
@@ -122,7 +137,15 @@ function ClassRow({
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">
           {formatLongDate(ce.startsAt).split(",")[0]}
         </p>
-        <p className={`font-display text-2xl leading-none ${confirmed && !muted ? "text-brand-accent" : "text-foreground"}`}>
+        <p className={`font-display text-2xl leading-none ${
+          live
+            ? "text-red-400"
+            : confirmed
+            ? "text-emerald-400"
+            : pending
+            ? "text-amber-400"
+            : "text-foreground"
+        }`}>
           {formatTime(ce.startsAt)}
         </p>
         <p className="text-[11px] text-muted-foreground">
@@ -130,7 +153,9 @@ function ClassRow({
         </p>
       </div>
 
-      <div className={`hidden h-12 w-px sm:block ${live ? "bg-red-500/20" : "bg-border"}`} />
+      <div className={`hidden h-12 w-px sm:block ${
+        live ? "bg-red-500/20" : confirmed ? "bg-emerald-500/20" : pending ? "bg-amber-500/20" : "bg-border"
+      }`} />
 
       {/* Info */}
       <div className="min-w-0 flex-1 space-y-1">
@@ -148,7 +173,7 @@ function ClassRow({
 
       {/* Status + arrow */}
       <div className="flex shrink-0 items-center gap-3">
-        <StatusBadge access={access} isLive={live} isPast={past} />
+        <StatusBadge access={access} isLive={live} isPast={past} priceCents={ce.priceCents} />
         <ArrowRight
           size={14}
           className="text-muted-foreground/30 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-brand-accent"
@@ -160,10 +185,21 @@ function ClassRow({
 
 // --- Section header ---
 
-function SectionHeader({ label, count }: { label: string; count: number }) {
+function SectionHeader({
+  label,
+  count,
+  icon,
+  accentColor,
+}: {
+  label: string;
+  count: number;
+  icon?: React.ReactNode;
+  accentColor?: string;
+}) {
   return (
     <div className="flex items-center gap-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
+      {icon}
+      <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${accentColor ?? "text-muted-foreground/60"}`}>
         {label}
       </p>
       <span className="rounded-sm border border-border px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground/60">
@@ -197,7 +233,14 @@ export default function StudentAgendaPage() {
   const live = agenda?.live ?? [];
   const upcoming = agenda?.upcoming ?? [];
   const history = agenda?.history ?? [];
-  const totalActive = live.length + upcoming.length;
+
+  // Split upcoming into enrolled vs available
+  const enrolled = upcoming.filter(
+    (i) => i.accessState === "WAITING_RELEASE" || i.accessState === "CAN_ENTER" || i.accessState === "PENDING_PAYMENT"
+  );
+  const available = upcoming.filter((i) => i.accessState === "NEEDS_PURCHASE");
+
+  const totalEnrolled = live.length + enrolled.length;
 
   return (
     <div className="space-y-12">
@@ -210,7 +253,17 @@ export default function StudentAgendaPage() {
           Minha Agenda
         </h1>
         <p className="text-base text-muted-foreground">
-          {totalActive} aula{totalActive !== 1 ? "s" : ""} agendada{totalActive !== 1 ? "s" : ""}
+          {totalEnrolled > 0 && (
+            <span className="text-emerald-400">
+              {totalEnrolled} aula{totalEnrolled !== 1 ? "s" : ""} confirmada{totalEnrolled !== 1 ? "s" : ""}
+            </span>
+          )}
+          {totalEnrolled > 0 && available.length > 0 && (
+            <span className="text-muted-foreground/50"> . </span>
+          )}
+          {available.length > 0 && (
+            <span>{available.length} disponive{available.length !== 1 ? "is" : "l"}</span>
+          )}
           {history.length > 0 && (
             <span className="ml-2 text-muted-foreground/50">. {history.length} no historico</span>
           )}
@@ -259,12 +312,34 @@ export default function StudentAgendaPage() {
             </section>
           )}
 
-          {/* Proximas aulas */}
-          {upcoming.length > 0 && (
+          {/* Minhas aulas (enrolled) */}
+          {enrolled.length > 0 && (
             <section className="space-y-3">
-              <SectionHeader label="Proximas aulas" count={upcoming.length} />
+              <SectionHeader
+                label="Minhas aulas"
+                count={enrolled.length}
+                icon={<CheckCircle size={12} className="text-emerald-400" />}
+                accentColor="text-emerald-400"
+              />
               <div className="flex flex-col gap-2">
-                {upcoming.map((item) => (
+                {enrolled.map((item) => (
+                  <ClassRow key={item.classEvent.id} item={item} section="upcoming" />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Disponiveis (needs purchase) */}
+          {available.length > 0 && (
+            <section className="space-y-3">
+              <SectionHeader
+                label="Disponiveis para voce"
+                count={available.length}
+                icon={<Sparkles size={12} className="text-brand-accent" />}
+                accentColor="text-brand-accent"
+              />
+              <div className="flex flex-col gap-2">
+                {available.map((item) => (
                   <ClassRow key={item.classEvent.id} item={item} section="upcoming" />
                 ))}
               </div>

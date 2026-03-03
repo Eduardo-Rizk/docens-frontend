@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Clock, Timer, ShieldCheck, Lock } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
@@ -10,6 +10,7 @@ import { useClassEvent } from "@/lib/queries/class-events";
 import { useCreateEnrollment } from "@/lib/queries/enrollments";
 import { useConfirmPayment } from "@/lib/queries/payments";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
+import { isPurchaseBlocked } from "@/lib/temporal";
 
 type PageProps = {
   params: Promise<{ classEventId: string }>;
@@ -48,10 +49,21 @@ export default function CheckoutPage({ params }: PageProps) {
   const subject = detail.subject;
   const teacher = detail.teacher;
 
+  const blocked = isPurchaseBlocked(classEvent.startsAt, classEvent.durationMin, classEvent.publicationStatus);
+
+  useEffect(() => {
+    if (blocked) router.replace(`/auloes/${classEventId}`);
+  }, [blocked, router, classEventId]);
+
+  if (blocked) {
+    return <div className="p-8 text-muted-foreground">Redirecionando...</div>;
+  }
+
   const teacherName = teacher.userName;
   const teacherInitials = teacher.photo || teacherName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
   const price = formatPrice(classEvent.priceCents);
   const spotsLeft = classEvent.spotsLeft;
+  const isSoldOut = classEvent.isSoldOut;
 
   async function handlePay() {
     setProcessing(true);
@@ -158,12 +170,16 @@ export default function CheckoutPage({ params }: PageProps) {
           {/* Pay button */}
           <button
             type="button"
-            disabled={processing}
+            disabled={processing || isSoldOut}
             onClick={handlePay}
             className="flex w-full items-center justify-center gap-2.5 rounded-md bg-[#ea580c] px-6 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c] disabled:opacity-50"
           >
             <Lock size={14} />
-            {processing ? "Processando..." : "Confirmar pagamento"}
+            {isSoldOut
+              ? "Esgotado"
+              : processing
+                ? "Processando..."
+                : "Confirmar pagamento"}
           </button>
 
           {/* Trust signals */}

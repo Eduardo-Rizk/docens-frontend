@@ -1,10 +1,11 @@
-type Tone = "default" | "success" | "warn" | "muted";
+type Tone = "default" | "success" | "warn" | "muted" | "danger";
 
 const toneClasses: Record<Tone, string> = {
   default: "bg-[#0f172a]/10 text-[#0f172a] border-[#0f172a]/20",
   success: "bg-success/10 text-success border-success/20",
   warn: "bg-warning/10 text-warning border-warning/20",
   muted: "bg-surface text-muted-foreground border-border",
+  danger: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 export function StatusPill({

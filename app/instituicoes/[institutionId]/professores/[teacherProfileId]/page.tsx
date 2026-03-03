@@ -9,6 +9,7 @@ import { TeacherAvatar } from "@/components/TeacherAvatar";
 import { useInstitution } from "@/lib/queries/institutions";
 import { useTeacherDetail } from "@/lib/queries/teachers";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
+import { getEventTemporalState } from "@/lib/temporal";
 
 type PageProps = {
   params: Promise<{ institutionId: string; teacherProfileId: string }>;
@@ -154,19 +155,36 @@ export default function TeacherProfilePage({ params }: PageProps) {
                 {/* Class cards */}
                 <div className="flex flex-col gap-3">
                   {events.map((event) => {
+                    const temporal = getEventTemporalState(event.startsAt, event.durationMin, event.publicationStatus);
+                    const isPast = temporal === "past";
+                    const isLive = temporal === "live";
                     const sold = event.soldSeats >= event.capacity;
                     const spotsLeft = event.capacity - event.soldSeats;
 
                     return (
                       <div
                         key={event.id}
-                        className="flex flex-col gap-5 rounded-md border border-border bg-surface p-6 transition-colors duration-200 hover:border-[#9ca3af] hover:shadow-md sm:flex-row sm:items-center sm:gap-8"
+                        className={`flex flex-col gap-5 rounded-md border p-6 transition-colors duration-200 sm:flex-row sm:items-center sm:gap-8 ${
+                          isLive
+                            ? "border-red-500/30 bg-red-500/5 hover:border-red-500/50"
+                            : isPast
+                              ? "border-border/50 bg-surface/60 opacity-70"
+                              : "border-border bg-surface hover:border-[#9ca3af] hover:shadow-md"
+                        }`}
                       >
                         {/* Info */}
                         <div className="min-w-0 flex-1 space-y-2">
-                          <p className="font-display text-lg leading-snug text-foreground">
+                          <p className={`font-display text-lg leading-snug ${isPast ? "text-muted-foreground" : "text-foreground"}`}>
                             {event.title}
                           </p>
+                          {(isLive || isPast) && (
+                            <p className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${
+                              isLive ? "text-red-400" : "text-muted-foreground/60"
+                            }`}>
+                              {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />}
+                              {isLive ? "Ao vivo" : "Encerrada"}
+                            </p>
+                          )}
                           <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1.5">
                               <Calendar size={11} className="text-brand-accent" />
@@ -185,11 +203,11 @@ export default function TeacherProfilePage({ params }: PageProps) {
 
                         {/* Price + CTA */}
                         <div className="flex shrink-0 items-center gap-6 sm:flex-col sm:items-end sm:gap-3">
-                          <div className="text-right">
+                          <div className={`text-right ${isPast ? "opacity-50" : ""}`}>
                             <p className="font-display text-2xl text-foreground">
                               {formatPrice(event.priceCents)}
                             </p>
-                            {sold ? (
+                            {!isPast && (sold ? (
                               <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
                                 Esgotado
                               </p>
@@ -198,20 +216,26 @@ export default function TeacherProfilePage({ params }: PageProps) {
                                 <Users size={10} />
                                 {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""}
                               </p>
-                            )}
+                            ))}
                           </div>
 
-                          <Link
-                            href={`/auloes/${event.id}`}
-                            className={`flex items-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors duration-150 ${
-                              sold
-                                ? "pointer-events-none cursor-not-allowed border-border text-muted-foreground/40"
-                                : "border-brand-accent/30 bg-brand-accent/5 text-brand-accent hover:bg-brand-accent/15"
-                            }`}
-                          >
-                            {sold ? "Esgotado" : "Ver aula"}
-                            <ArrowUpRight size={12} />
-                          </Link>
+                          {isPast ? (
+                            <span className="flex items-center gap-2 rounded-sm border border-border px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground/40">
+                              Encerrada
+                            </span>
+                          ) : (
+                            <Link
+                              href={`/auloes/${event.id}`}
+                              className={`flex items-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors duration-150 ${
+                                sold
+                                  ? "pointer-events-none cursor-not-allowed border-border text-muted-foreground/40"
+                                  : "border-brand-accent/30 bg-brand-accent/5 text-brand-accent hover:bg-brand-accent/15"
+                              }`}
+                            >
+                              {sold ? "Esgotado" : "Ver aula"}
+                              <ArrowUpRight size={12} />
+                            </Link>
+                          )}
                         </div>
                       </div>
                     );

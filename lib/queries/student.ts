@@ -40,6 +40,34 @@ export function useStudentAgenda() {
   })
 }
 
+/**
+ * Reuses the student agenda cache to get enrollment state for a specific class event.
+ * Returns null accessState if the student hasn't enrolled (or user isn't a student).
+ */
+export function useMyClassEventAccess(
+  classEventId: string,
+  isStudent: boolean,
+) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['student', 'agenda'],
+    queryFn: () => apiFetch<StudentAgenda>('/student/agenda'),
+    enabled: isStudent,
+  })
+
+  const item = data
+    ? [...data.live, ...data.upcoming, ...data.history].find(
+        (i) => i.classEvent.id === classEventId,
+      )
+    : undefined
+
+  return {
+    isLoading: isStudent && isLoading,
+    enrollment: item?.enrollment ?? null,
+    accessState: item?.accessState ?? null,
+    meetingUrl: item?.classEvent.meetingUrl ?? null,
+  }
+}
+
 export function useUpdateStudentProfile() {
   const queryClient = useQueryClient()
   return useMutation({

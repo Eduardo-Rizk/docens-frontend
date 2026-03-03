@@ -3,13 +3,15 @@
 import { use } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Clock, Timer, Users } from "lucide-react";
+import { Calendar, Clock, Timer, Users, CheckCircle, Lock, AlertCircle, ExternalLink } from "lucide-react";
 import { StatusPill } from "@/components/status-pill";
 import { BackLink } from "@/components/BackLink";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
 import { useClassEvent } from "@/lib/queries/class-events";
+import { useMyClassEventAccess } from "@/lib/queries/student";
 import { useAuth } from "@/lib/auth-context";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
+import { getEventTemporalState, isPurchaseBlocked } from "@/lib/temporal";
 
 type PageProps = {
   params: Promise<{ classEventId: string }>;
@@ -21,6 +23,10 @@ export default function ClassEventPage({ params }: PageProps) {
   const fromAgenda = searchParams.get("from") === "agenda";
   const { data: detail, isLoading } = useClassEvent(classEventId);
   const { user } = useAuth();
+  const { accessState, meetingUrl } = useMyClassEventAccess(
+    classEventId,
+    user?.role === "STUDENT",
+  );
 
   if (isLoading) {
     return (
@@ -51,6 +57,9 @@ export default function ClassEventPage({ params }: PageProps) {
   const subject = detail.subject;
   const teacher = detail.teacher;
 
+  const temporalState = getEventTemporalState(classEvent.startsAt, classEvent.durationMin, classEvent.publicationStatus);
+  const purchaseBlocked = isPurchaseBlocked(classEvent.startsAt, classEvent.durationMin, classEvent.publicationStatus);
+
   const soldOut = classEvent.isSoldOut;
   const spotsLeft = classEvent.spotsLeft;
   const teacherName = teacher.userName;
@@ -68,12 +77,23 @@ export default function ClassEventPage({ params }: PageProps) {
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill tone="default">{institution.shortName}</StatusPill>
           <StatusPill tone="muted">{subject.name}</StatusPill>
-          {soldOut ? (
-            <StatusPill tone="warn">Esgotado</StatusPill>
-          ) : (
-            <StatusPill tone="success">
-              {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""}
+          {temporalState === "live" && (
+            <StatusPill tone="danger">
+              <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+              Ao vivo
             </StatusPill>
+          )}
+          {temporalState === "past" && (
+            <StatusPill tone="muted">Encerrada</StatusPill>
+          )}
+          {temporalState === "upcoming" && (
+            soldOut ? (
+              <StatusPill tone="warn">Esgotado</StatusPill>
+            ) : (
+              <StatusPill tone="success">
+                {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""}
+              </StatusPill>
+            )
           )}
         </div>
       </div>
@@ -111,72 +131,195 @@ export default function ClassEventPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Right: purchase sidebar */}
-        <aside className="rounded-sm border border-border bg-surface p-6 space-y-6">
-          {/* Date + time */}
-          <div className="space-y-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Data do encontro
-            </p>
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2.5 text-sm text-foreground">
-                <Calendar size={14} className="shrink-0 text-brand-accent" />
-                {formatLongDate(classEvent.startsAt)}
+        {/* Right: sidebar — changes based on student enrollment state */}
+        {accessState === "CAN_ENTER" ? (
+          <aside className="rounded-sm border border-emerald-500/30 bg-surface p-6 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                {temporalState === "live" && (
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+                <p className="text-sm font-bold text-emerald-400">
+                  {temporalState === "live" ? "Ao vivo agora" : "Vaga garantida"}
+                </p>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-foreground">
-                <Clock size={14} className="shrink-0 text-brand-accent" />
-                {formatTime(classEvent.startsAt)}
-              </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                <Timer size={14} className="shrink-0" />
-                {classEvent.durationMin} min de duracao
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Calendar size={14} className="shrink-0 text-brand-accent" />
+                  {formatLongDate(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Clock size={14} className="shrink-0 text-brand-accent" />
+                  {formatTime(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <Timer size={14} className="shrink-0" />
+                  {classEvent.durationMin} min de duração
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="h-px bg-border" />
+            <div className="h-px bg-border" />
 
-          {/* Price + spots */}
-          <div className="space-y-1.5">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
-              Investimento
-            </p>
-            <p className="font-display text-4xl text-foreground">
-              {formatPrice(classEvent.priceCents)}
-            </p>
-            {!soldOut && (
-              <p className="flex items-center gap-1.5 text-xs text-emerald-700">
-                <Users size={11} />
-                {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""} restante{spotsLeft !== 1 ? "s" : ""}
-              </p>
+            {meetingUrl ? (
+              <a
+                href={meetingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-emerald-700"
+              >
+                <ExternalLink size={16} />
+                Entrar na aula
+              </a>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Lock size={14} className="shrink-0" />
+                  O link será liberado no horário da aula
+                </div>
+              </div>
             )}
-          </div>
 
-          {/* CTA */}
-          {!soldOut && user && (
+            <Link
+              href="/aluno/meus-auloes"
+              className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Voltar para minha agenda
+            </Link>
+          </aside>
+        ) : accessState === "WAITING_RELEASE" ? (
+          <aside className="rounded-sm border border-emerald-500/20 bg-surface p-6 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle size={16} className="text-emerald-400" />
+                <p className="text-sm font-bold text-emerald-400">Vaga garantida</p>
+              </div>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Calendar size={14} className="shrink-0 text-brand-accent" />
+                  {formatLongDate(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Clock size={14} className="shrink-0 text-brand-accent" />
+                  {formatTime(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <Timer size={14} className="shrink-0" />
+                  {classEvent.durationMin} min de duração
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <Lock size={14} className="shrink-0" />
+              O link de acesso será liberado no horário da aula
+            </div>
+
+            <Link
+              href="/aluno/meus-auloes"
+              className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Voltar para minha agenda
+            </Link>
+          </aside>
+        ) : accessState === "PENDING_PAYMENT" ? (
+          <aside className="rounded-sm border border-amber-500/20 bg-surface p-6 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="text-amber-400" />
+                <p className="text-sm font-bold text-amber-400">Pagamento pendente</p>
+              </div>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Calendar size={14} className="shrink-0 text-brand-accent" />
+                  {formatLongDate(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Clock size={14} className="shrink-0 text-brand-accent" />
+                  {formatTime(classEvent.startsAt)}
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
             <Link
               href={`/checkout/${classEvent.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-600 px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-amber-700"
             >
-              Garanta sua vaga . {formatPrice(classEvent.priceCents)}
+              Completar pagamento
             </Link>
-          )}
-
-          {!soldOut && !user && (
-            <Link
-              href={`/login?redirect=/auloes/${classEvent.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
-            >
-              Entrar para comprar
-            </Link>
-          )}
-
-          {soldOut && (
-            <div className="w-full rounded-sm border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-amber-700">
-              Esgotado
+          </aside>
+        ) : (
+          /* Default: NEEDS_PURCHASE or not logged in */
+          <aside className="rounded-sm border border-border bg-surface p-6 space-y-6">
+            {/* Date + time */}
+            <div className="space-y-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
+                Data do encontro
+              </p>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Calendar size={14} className="shrink-0 text-brand-accent" />
+                  {formatLongDate(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-foreground">
+                  <Clock size={14} className="shrink-0 text-brand-accent" />
+                  {formatTime(classEvent.startsAt)}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <Timer size={14} className="shrink-0" />
+                  {classEvent.durationMin} min de duração
+                </div>
+              </div>
             </div>
-          )}
-        </aside>
+
+            <div className="h-px bg-border" />
+
+            {/* Price + spots */}
+            <div className={`space-y-1.5 ${purchaseBlocked ? "opacity-50" : ""}`}>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
+                Investimento
+              </p>
+              <p className="font-display text-4xl text-foreground">
+                {formatPrice(classEvent.priceCents)}
+              </p>
+              {!soldOut && !purchaseBlocked && (
+                <p className="flex items-center gap-1.5 text-xs text-emerald-700">
+                  <Users size={11} />
+                  {spotsLeft} vaga{spotsLeft !== 1 ? "s" : ""} restante{spotsLeft !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+
+            {/* CTA */}
+            {purchaseBlocked ? (
+              <div className="w-full rounded-sm border border-border bg-surface px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Aula encerrada
+              </div>
+            ) : soldOut ? (
+              <div className="w-full rounded-sm border border-amber-500/20 bg-amber-500/5 px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-amber-700">
+                Esgotado
+              </div>
+            ) : user ? (
+              <Link
+                href={`/checkout/${classEvent.id}`}
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
+              >
+                Garanta sua vaga · {formatPrice(classEvent.priceCents)}
+              </Link>
+            ) : (
+              <Link
+                href={`/login?redirect=/auloes/${classEvent.id}`}
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
+              >
+                Entrar para comprar
+              </Link>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   );
