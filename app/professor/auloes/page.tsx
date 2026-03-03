@@ -6,10 +6,10 @@ import { StatusPill } from "@/components/status-pill";
 import { useTeacherClassEvents, type TeacherClassEvent } from "@/lib/queries/teacher";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
-const publicationConfig: Record<string, { label: string; tone: "muted" | "default" | "success" }> = {
-  DRAFT: { label: "Rascunho", tone: "muted" },
-  PUBLISHED: { label: "Publicado", tone: "default" },
-  FINISHED: { label: "Finalizado", tone: "success" },
+const publicationConfig: Record<string, { label: string; tone: "muted" | "warn" | "success"; border: string }> = {
+  DRAFT: { label: "Rascunho", tone: "warn", border: "border-l-[#f97316]" },
+  PUBLISHED: { label: "Publicado", tone: "success", border: "border-l-[#22c55e]" },
+  FINISHED: { label: "Finalizado", tone: "muted", border: "border-l-[#6b7280]" },
 };
 
 function SectionHeader({ label, count }: { label: string; count: number }) {
@@ -31,7 +31,7 @@ function ClassEventRow({ classEvent, showBuyers = true }: { classEvent: TeacherC
 
   return (
     <article
-      className="group relative flex flex-col gap-4 rounded-md border border-border bg-surface p-5 transition-all hover:border-[#9ca3af] hover:shadow-md sm:flex-row sm:items-center sm:gap-6"
+      className={`group relative flex flex-col gap-4 rounded-md border border-border border-l-[3px] ${pub.border} bg-surface p-5 transition-all hover:border-[#9ca3af] hover:shadow-md sm:flex-row sm:items-center sm:gap-6`}
     >
       {/* Date/time */}
       <div className="w-28 shrink-0 space-y-0.5">
@@ -66,7 +66,7 @@ function ClassEventRow({ classEvent, showBuyers = true }: { classEvent: TeacherC
         {classEvent.soldSeats !== undefined && (
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users size={11} />
-            {classEvent.soldSeats}/{classEvent.capacity}
+            {classEvent.soldSeats}/{classEvent.capacity ?? "∞"}
           </span>
         )}
         <span className="text-xs font-semibold text-foreground">
@@ -82,7 +82,7 @@ function ClassEventRow({ classEvent, showBuyers = true }: { classEvent: TeacherC
           </Link>
         )}
         <Link
-          href={`/auloes/${classEvent.id}`}
+          href={`/professor/auloes/${classEvent.id}`}
           className="text-muted-foreground/40 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-brand-accent"
         >
           <ArrowRight size={14} />

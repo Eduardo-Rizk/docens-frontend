@@ -102,6 +102,38 @@ export function useUpdateTeacherProfile() {
   })
 }
 
+export interface TeacherClassEventDetail {
+  classEvent: {
+    id: string
+    title: string
+    description: string
+    startsAt: string
+    durationMin: number
+    priceCents: number
+    capacity: number | null
+    soldSeats: number
+    publicationStatus: string
+    meetingStatus: string
+    meetingUrl?: string
+    createdAt: string
+    isSoldOut: boolean
+    spotsLeft: number | null
+  }
+  institution: { id: string; name: string; shortName: string }
+  subject: { id: string; name: string; icon: string | null }
+}
+
+export function useTeacherClassEvent(classEventId: string) {
+  return useQuery({
+    queryKey: ['teacher', 'class-events', classEventId],
+    queryFn: () =>
+      apiFetch<TeacherClassEventDetail>(
+        `/teacher/class-events/${classEventId}`,
+      ),
+    enabled: !!classEventId,
+  })
+}
+
 export function useCreateClassEvent() {
   const queryClient = useQueryClient()
   return useMutation({

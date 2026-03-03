@@ -52,7 +52,7 @@ export function TopNav() {
 
   const navItems = [
     ...publicItems,
-    ...(user?.role === "STUDENT" || user?.role === "TEACHER" ? studentItems : []),
+    ...(user?.role === "STUDENT" ? studentItems : []),
     ...(user?.role === "TEACHER" ? teacherItems : []),
   ];
 

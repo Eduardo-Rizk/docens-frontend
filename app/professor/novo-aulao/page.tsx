@@ -29,7 +29,7 @@ export default function NovoAulaoPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [unlimitedCapacity, setUnlimitedCapacity] = useState(false);
   const { data: institutions } = useInstitutions();
-  const { data: subjects } = useInstitutionSubjects(selectedInstitutionId);
+  const { data: subjects, isFetching: subjectsLoading } = useInstitutionSubjects(selectedInstitutionId);
   const createClassEvent = useCreateClassEvent();
   const router = useRouter();
 
@@ -153,12 +153,18 @@ export default function NovoAulaoPage() {
                 id="materia"
                 name="materia"
                 required
-                className={selectCls}
+                className={`${selectCls} ${!selectedInstitutionId || subjectsLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                disabled={!selectedInstitutionId}
+                disabled={!selectedInstitutionId || subjectsLoading}
               >
-                <option value="">Selecione uma matéria</option>
+                <option value="">
+                  {!selectedInstitutionId
+                    ? "Selecione uma instituição primeiro"
+                    : subjectsLoading
+                      ? "Carregando matérias..."
+                      : "Selecione uma matéria"}
+                </option>
                 {(subjects ?? []).map((sub) => (
                   <option key={sub.subjectId} value={sub.subjectId}>
                     {sub.subjectName}

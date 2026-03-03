@@ -72,7 +72,7 @@ export default function ExplorePage() {
 
         {/* Filters */}
         <div className="flex justify-center mb-12">
-          <div className="flex border border-border bg-surface">
+          <div className="inline-flex rounded-lg border border-border bg-surface overflow-hidden">
             {[
               { id: "ALL", label: "Todas" },
               { id: "UNIVERSITY", label: "Faculdades" },
@@ -83,7 +83,7 @@ export default function ExplorePage() {
                 onClick={() => setActiveTab(tab.id as Tab)}
                 className={cn(
                   "px-6 py-2.5 text-sm font-semibold transition-all duration-200 relative",
-                  i > 0 && "border-l border-[#d1d5db]",
+                  i > 0 && "border-l border-border",
                   activeTab === tab.id
                     ? "text-white"
                     : "text-[#6b7280] hover:text-[#0f172a]"
@@ -92,7 +92,7 @@ export default function ExplorePage() {
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="active-filter-tab"
-                    className="absolute inset-0 bg-[#0f172a] rounded-md"
+                    className="absolute inset-0 bg-[#0f172a]"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
