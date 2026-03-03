@@ -182,7 +182,7 @@ export default function ClassEventPage({ params }: PageProps) {
 
             <Link
               href="/aluno/meus-auloes"
-              className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex w-full items-center justify-center rounded-md border border-border bg-surface px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               Voltar para minha agenda
             </Link>
@@ -219,7 +219,7 @@ export default function ClassEventPage({ params }: PageProps) {
 
             <Link
               href="/aluno/meus-auloes"
-              className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex w-full items-center justify-center rounded-md border border-border bg-surface px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               Voltar para minha agenda
             </Link>

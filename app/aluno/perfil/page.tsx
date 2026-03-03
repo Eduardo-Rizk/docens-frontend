@@ -6,11 +6,9 @@ import { useAuth } from "@/lib/auth-context";
 import { useInstitutions } from "@/lib/queries/institutions";
 import { useUpdateStudentProfile } from "@/lib/queries/student";
 
-function toggleId(ids: string[], id: string) {
-  if (ids.includes(id)) {
-    return ids.filter((entry) => entry !== id);
-  }
-  return [...ids, id];
+/** Single-select: clicking a new institution replaces the previous one. */
+function selectSingle(current: string[], id: string): string[] {
+  return current.includes(id) ? [] : [id];
 }
 
 export default function StudentProfilePage() {
@@ -25,6 +23,9 @@ export default function StudentProfilePage() {
   // Initialize form from user once loaded
   if (user && !initialized) {
     setName(user.name);
+    setInstitutionIds(
+      user.studentProfile?.institutions?.map((i) => i.institutionId) ?? [],
+    );
     setInitialized(true);
   }
 
@@ -103,7 +104,7 @@ export default function StudentProfilePage() {
                     key={institution.id}
                     type="button"
                     onClick={() =>
-                      setInstitutionIds((prev) => toggleId(prev, institution.id))
+                      setInstitutionIds((prev) => selectSingle(prev, institution.id))
                     }
                     className={`border px-3 py-2 text-[11px] font-semibold transition-colors ${
                       active

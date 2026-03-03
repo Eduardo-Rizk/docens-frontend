@@ -10,7 +10,10 @@ export interface AuthUser {
   name: string
   email: string
   role: 'STUDENT' | 'TEACHER'
-  studentProfile?: { id: string } | null
+  studentProfile?: {
+    id: string
+    institutions?: { id: string; institutionId: string }[]
+  } | null
   teacherProfile?: {
     id: string
     bio?: string
