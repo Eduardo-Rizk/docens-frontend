@@ -96,10 +96,10 @@ export default function LoginPage() {
       </form>
 
       <p className="text-center text-[11px] text-muted-foreground/50 tracking-wide">
-        Nao tem uma conta?{" "}
+        Não tem uma conta?{" "}
         <Link
           href="/cadastro"
-          className="text-brand-accent font-semibold hover:opacity-70 transition-opacity duration-200"
+          className="inline-block py-2 px-1 text-brand-accent font-semibold hover:opacity-70 transition-opacity duration-200"
         >
           Criar conta
         </Link>

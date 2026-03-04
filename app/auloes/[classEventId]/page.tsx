@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Clock, Timer, Users, CheckCircle, Lock, AlertCircle, ExternalLink } from "lucide-react";
+import { Calendar, Clock, Timer, Users, CheckCircle, Lock, AlertCircle, ExternalLink, LogIn } from "lucide-react";
 import { StatusPill } from "@/components/status-pill";
 import { BackLink } from "@/components/BackLink";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
@@ -311,12 +311,18 @@ export default function ClassEventPage({ params }: PageProps) {
                 Garanta sua vaga · {formatPrice(classEvent.priceCents)}
               </Link>
             ) : (
-              <Link
-                href={`/login?redirect=/auloes/${classEvent.id}`}
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:bg-[#c2410c]"
-              >
-                Entrar para comprar
-              </Link>
+              <div className="space-y-3">
+                <Link
+                  href={`/login?redirect=/auloes/${classEvent.id}`}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-md bg-[#ea580c] px-4 py-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#c2410c]"
+                >
+                  <LogIn size={16} />
+                  Faça login para garantir sua vaga
+                </Link>
+                <p className="text-center text-[11px] text-muted-foreground/70">
+                  Você precisa estar logado para comprar esta aula
+                </p>
+              </div>
             )}
           </aside>
         )}

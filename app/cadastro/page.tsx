@@ -14,6 +14,15 @@ const input =
 const label =
   "block text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60 mb-2";
 
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 function toggleId(ids: string[], id: string) {
   if (ids.includes(id)) {
     return ids.filter((entry) => entry !== id);
@@ -27,10 +36,12 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [institutionIds, setInstitutionIds] = useState<string[]>([]);
   const [subjectIds, setSubjectIds] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const { register } = useAuth();
   const router = useRouter();
@@ -61,8 +72,23 @@ export default function RegisterPage() {
     };
   }, [photoUrl]);
 
+  const phoneDigits = phone.replace(/\D/g, "");
+  const isValidPhone = phoneDigits.length >= 10 && phoneDigits.length <= 11;
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  const emailTouched = email.length > 0;
+  const phoneTouched = phone.length > 0;
+  const formValid =
+    name.trim().length > 0 &&
+    isValidEmail &&
+    isValidPhone &&
+    institutionIds.length > 0 &&
+    password.length >= 8 &&
+    password === confirmPassword;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitted(true);
+    if (!formValid) return;
     setLoading(true);
     try {
       await register({
@@ -114,12 +140,15 @@ export default function RegisterPage() {
             id="email"
             type="email"
             placeholder="seu@email.com"
-            className={input}
+            className={`${input} ${emailTouched && !isValidEmail ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+          {emailTouched && !isValidEmail && (
+            <p className="mt-1.5 text-[11px] text-red-400">Digite um email válido (ex: nome@dominio.com)</p>
+          )}
         </div>
 
         {/* Celular + Tipo de conta */}
@@ -132,11 +161,15 @@ export default function RegisterPage() {
               id="phone"
               type="tel"
               placeholder="(11) 99999-9999"
-              className={input}
+              className={`${input} ${phoneTouched && !isValidPhone ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
               autoComplete="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(maskPhone(e.target.value))}
+              required
             />
+            {phoneTouched && !isValidPhone && (
+              <p className="mt-1.5 text-[11px] text-red-400">Digite um celular válido com DDD</p>
+            )}
           </div>
           <div>
             <label className={label}>
@@ -198,11 +231,17 @@ export default function RegisterPage() {
               );
             })}
           </div>
-          <p className="mt-2 text-[10px] text-muted-foreground/55">
-            {role === "TEACHER"
-              ? "Você pode editar depois no perfil."
-              : "Selecione sua instituição. Você pode alterar depois no perfil."}
-          </p>
+          {submitted && institutionIds.length === 0 ? (
+            <p className="mt-2 text-[11px] text-red-400">
+              Selecione pelo menos uma instituição
+            </p>
+          ) : (
+            <p className="mt-2 text-[10px] text-muted-foreground/55">
+              {role === "TEACHER"
+                ? "Você pode editar depois no perfil."
+                : "Selecione sua instituição. Você pode alterar depois no perfil."}
+            </p>
+          )}
         </div>
 
         {role === "TEACHER" && (
@@ -263,13 +302,34 @@ export default function RegisterPage() {
           <input
             id="password"
             type="password"
-            placeholder="Minimo 8 caracteres"
+            placeholder="Mínimo 8 caracteres"
             className={input}
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
           />
+        </div>
+
+        {/* Confirmar senha */}
+        <div>
+          <label htmlFor="confirmPassword" className={label}>
+            Confirmar senha
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            placeholder="Digite a senha novamente"
+            className={`${input} ${confirmPassword && confirmPassword !== password ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+          {confirmPassword && confirmPassword !== password && (
+            <p className="mt-1.5 text-[11px] text-red-400">As senhas não coincidem</p>
+          )}
         </div>
 
         {/* Divider */}
@@ -278,7 +338,7 @@ export default function RegisterPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (submitted && !formValid)}
           className="w-full bg-[#ea580c] text-white font-bold text-xs uppercase tracking-[0.14em] py-3.5 rounded-md hover:bg-[#c2410c] active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
         >
           {loading ? "Criando conta..." : "Criar conta"}
@@ -286,10 +346,10 @@ export default function RegisterPage() {
       </form>
 
       <p className="text-center text-[11px] text-muted-foreground/50 tracking-wide">
-        Ja tem uma conta?{" "}
+        Já tem uma conta?{" "}
         <Link
           href="/login"
-          className="text-brand-accent font-semibold hover:opacity-70 transition-opacity duration-200"
+          className="inline-block py-2 px-1 text-brand-accent font-semibold hover:opacity-70 transition-opacity duration-200"
         >
           Entrar
         </Link>
