@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
 import { useAuth } from "@/lib/auth-context";
@@ -42,9 +42,9 @@ export default function RegisterPage() {
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const { register } = useAuth();
-  const router = useRouter();
   const { data: institutions } = useInstitutions();
   const { data: subjects } = useSubjects();
 
@@ -100,12 +100,48 @@ export default function RegisterPage() {
         institutionIds,
         subjectIds: role === "TEACHER" ? subjectIds : undefined,
       });
-      router.push("/");
+      setEmailSent(true);
     } catch {
       // Error toast handled by auth context
     } finally {
       setLoading(false);
     }
+  }
+
+  if (emailSent) {
+    return (
+      <AuthLayout
+        title="Verifique seu email"
+        subtitle="Enviamos um link de confirmacao para o seu email."
+      >
+        <div className="flex flex-col items-center gap-6 py-4">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-xl" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
+              <CheckCircle size={32} className="text-emerald-700" />
+            </div>
+          </div>
+
+          <div className="space-y-2 text-center">
+            <p className="text-sm text-muted-foreground">
+              Enviamos um link de confirmacao para
+            </p>
+            <p className="text-sm font-semibold text-foreground">{email}</p>
+            <p className="text-xs text-muted-foreground/60 mt-2">
+              Clique no link do email para ativar sua conta e fazer login.
+            </p>
+          </div>
+
+          <Link
+            href="/login"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-accent hover:opacity-70 transition-opacity"
+          >
+            <ArrowLeft size={12} />
+            Ir para o login
+          </Link>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (

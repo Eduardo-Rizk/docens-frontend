@@ -79,16 +79,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   })
 
-  // Register: POST to Next.js API route which sets HttpOnly cookie
+  // Register: POST to Next.js API route — no session created (email verification required)
   const registerMutation = useMutation({
     mutationFn: (data: RegisterData) =>
-      apiFetch<{ token: string; user: AuthUser }>('/auth/register', {
+      apiFetch<{ message: string }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-    },
     onError: (err: ApiError) => {
       toast.error(err.message || 'Registration failed')
     },
