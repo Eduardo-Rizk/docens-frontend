@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import { Providers } from "./providers";
@@ -31,13 +32,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.className} ${spaceGrotesk.className}`}>
-      <body className="bg-background text-foreground antialiased font-sans">
-        <Providers>
-          <AppShell>{children}</AppShell>
-          <ToastProvider />
-        </Providers>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="pt-BR" className={`${inter.className} ${spaceGrotesk.className}`}>
+        <body className="bg-background text-foreground antialiased font-sans">
+          <Providers>
+            <AppShell>{children}</AppShell>
+            <ToastProvider />
+          </Providers>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
