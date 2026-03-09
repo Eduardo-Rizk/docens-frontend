@@ -1,15 +1,16 @@
 'use client'
 import { createContext, useContext, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiFetch, ApiError } from './api'
+import { useUser, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiFetch } from './api'
 import { toast } from 'sonner'
 
-// Types matching backend response
 export interface AuthUser {
   id: string
   name: string
   email: string
   role: 'STUDENT' | 'TEACHER'
+  clerkId: string
   studentProfile?: {
     id: string
     institutions?: { id: string; institutionId: string }[]
@@ -23,14 +24,6 @@ export interface AuthUser {
   } | null
 }
 
-interface AuthContextType {
-  user: AuthUser | null
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (data: RegisterData) => Promise<void>
-  logout: () => void
-}
-
 export interface RegisterData {
   name: string
   email: string
@@ -41,79 +34,67 @@ export interface RegisterData {
   subjectIds?: string[]
 }
 
+interface AuthContextType {
+  user: AuthUser | null
+  isLoading: boolean
+  register: (data: RegisterData) => Promise<void>
+  logout: () => void
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { isSignedIn, isLoaded: clerkLoaded } = useUser()
+  const { signOut } = useClerkAuth()
+  const { signIn, setActive } = useSignIn()
   const queryClient = useQueryClient()
 
-  const { data: user = null, isLoading } = useQuery({
+  // Fetch full profile from backend when signed in
+  const { data: user = null, isLoading: profileLoading } = useQuery({
     queryKey: ['auth', 'me'],
-    queryFn: async () => {
-      try {
-        return await apiFetch<AuthUser>('/auth/me')
-      } catch (err) {
-        // If token is invalid/expired, clear the orphaned cookie
-        // so the user isn't trapped (middleware blocks /login when cookie exists)
-        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-        }
-        throw err
-      }
-    },
+    queryFn: () => apiFetch<AuthUser>('/auth/me'),
+    enabled: !!isSignedIn,
     retry: false,
     staleTime: 5 * 60 * 1000,
   })
 
-  // Login: POST to Next.js API route (NOT the proxy) which sets HttpOnly cookie
-  const loginMutation = useMutation({
-    mutationFn: (data: { email: string; password: string }) =>
-      apiFetch<{ token: string; user: AuthUser }>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-    },
-    onError: (err: ApiError) => {
-      toast.error(err.message || 'Login failed')
-    },
-  })
-
-  // Register: POST to Next.js API route — no session created (email verification required)
-  const registerMutation = useMutation({
-    mutationFn: (data: RegisterData) =>
-      apiFetch<{ message: string }>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onError: (err: ApiError) => {
-      toast.error(err.message || 'Registration failed')
-    },
-  })
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      await loginMutation.mutateAsync({ email, password })
-    },
-    [loginMutation],
-  )
+  const isLoading = !clerkLoaded || (isSignedIn && profileLoading)
 
   const register = useCallback(
     async (data: RegisterData) => {
-      await registerMutation.mutateAsync(data)
+      // 1. Call backend to create Clerk user + Prisma user + profile
+      await apiFetch<{ message: string }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+
+      // 2. Auto sign-in via Clerk after backend registration
+      if (!signIn) return
+      try {
+        const result = await signIn.create({
+          identifier: data.email,
+          password: data.password,
+        })
+        if (result.status === 'complete' && setActive) {
+          await setActive({ session: result.createdSessionId })
+          queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+        }
+      } catch {
+        // Sign-in failed but registration succeeded — user can login manually
+        toast.success('Conta criada! Faça login para continuar.')
+      }
     },
-    [registerMutation],
+    [signIn, setActive, queryClient],
   )
 
   const logout = useCallback(async () => {
-    // Call the Next.js API route to clear the cookie server-side
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    await signOut()
     queryClient.clear()
     window.location.href = '/'
-  }, [queryClient])
+  }, [signOut, queryClient])
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, register, logout }}>
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
