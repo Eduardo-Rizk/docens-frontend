@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { KeyRound, ArrowLeft } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, type RegisterData } from "@/lib/auth-context";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
 import { toast } from "sonner";
 
@@ -43,8 +44,12 @@ export default function RegisterPage() {
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [verifyStep, setVerifyStep] = useState(false);
+  const [code, setCode] = useState("");
+  const [verifyError, setVerifyError] = useState("");
+  const formDataRef = useRef<RegisterData | null>(null);
 
-  const { register } = useAuth();
+  const { startRegister, verifyEmailAndComplete } = useAuth();
   const router = useRouter();
   const { data: institutions } = useInstitutions();
   const { data: subjects } = useSubjects();
@@ -91,17 +96,20 @@ export default function RegisterPage() {
     setSubmitted(true);
     if (!formValid) return;
     setLoading(true);
+    const data: RegisterData = {
+      name,
+      email,
+      password,
+      phone,
+      role,
+      institutionIds,
+      subjectIds: role === "TEACHER" ? subjectIds : undefined,
+    };
     try {
-      await register({
-        name,
-        email,
-        password,
-        phone,
-        role,
-        institutionIds,
-        subjectIds: role === "TEACHER" ? subjectIds : undefined,
-      });
-      router.push("/");
+      await startRegister(data);
+      formDataRef.current = data;
+      setVerifyStep(true);
+      toast.success("Código enviado! Verifique seu email.");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Erro ao criar conta.";
@@ -109,6 +117,82 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formDataRef.current) return;
+    setLoading(true);
+    setVerifyError("");
+    try {
+      await verifyEmailAndComplete(code, formDataRef.current);
+      router.push("/");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Código inválido.";
+      setVerifyError(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (verifyStep) {
+    return (
+      <AuthLayout
+        title="Verifique seu email"
+        subtitle={`Enviamos um código de verificação para ${email}`}
+      >
+        <form className="space-y-5" onSubmit={handleVerify}>
+          <div>
+            <label htmlFor="code" className={label}>
+              Código de verificação
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted-foreground/40">
+                <KeyRound size={16} />
+              </div>
+              <input
+                id="code"
+                type="text"
+                placeholder="123456"
+                className={`${input} pl-10`}
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          {verifyError && (
+            <p className="text-[11px] text-red-400 text-center">{verifyError}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#ea580c] text-white font-bold text-xs uppercase tracking-[0.14em] py-3.5 rounded-md hover:bg-[#c2410c] active:scale-[0.99] transition-all duration-150 disabled:opacity-50"
+          >
+            {loading ? "Verificando..." : "Verificar e criar conta"}
+          </button>
+        </form>
+
+        <p className="text-center text-[11px] text-muted-foreground/50 tracking-wide">
+          <button
+            type="button"
+            onClick={() => {
+              setVerifyStep(false);
+              setCode("");
+              setVerifyError("");
+            }}
+            className="inline-flex items-center gap-1 text-brand-accent font-semibold hover:opacity-70 transition-opacity duration-200"
+          >
+            <ArrowLeft size={10} />
+            Voltar
+          </button>
+        </p>
+      </AuthLayout>
+    );
   }
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useContext, useCallback } from 'react'
-import { useUser, useAuth as useClerkAuth, useSignIn } from '@clerk/nextjs'
+import { useUser, useAuth as useClerkAuth, useSignUp } from '@clerk/nextjs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiFetch } from './api'
 import { toast } from 'sonner'
@@ -37,7 +37,8 @@ export interface RegisterData {
 interface AuthContextType {
   user: AuthUser | null
   isLoading: boolean
-  register: (data: RegisterData) => Promise<void>
+  startRegister: (data: RegisterData) => Promise<void>
+  verifyEmailAndComplete: (code: string, data: RegisterData) => Promise<void>
   logout: () => void
 }
 
@@ -46,7 +47,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded: clerkLoaded } = useUser()
   const { signOut } = useClerkAuth()
-  const { signIn } = useSignIn()
+  const { signUp } = useSignUp()
   const queryClient = useQueryClient()
 
   // Fetch full profile from backend when signed in
@@ -60,35 +61,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isLoading = !clerkLoaded || (isSignedIn && profileLoading)
 
-  const register = useCallback(
+  // Step 1: Create Clerk user and send email verification code
+  const startRegister = useCallback(
     async (data: RegisterData) => {
-      // 1. Call backend to create Clerk user + Prisma user + profile
-      await apiFetch<{ message: string }>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      })
+      if (!signUp) throw new Error('Clerk not loaded')
 
-      // 2. Auto sign-in via Clerk after backend registration
-      if (!signIn) return
-      try {
-        const { error } = await signIn.password({
-          identifier: data.email,
-          password: data.password,
-        })
-        if (error) {
-          toast.success('Conta criada! Faça login para continuar.')
-          return
-        }
-        if (signIn.status === 'complete') {
-          await signIn.finalize()
-          queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
-        }
-      } catch {
-        // Sign-in failed but registration succeeded — user can login manually
-        toast.success('Conta criada! Faça login para continuar.')
+      const { error } = await signUp.password({
+        emailAddress: data.email,
+        password: data.password,
+        firstName: data.name.split(' ')[0],
+        lastName: data.name.split(' ').slice(1).join(' ') || undefined,
+      })
+      if (error) {
+        throw new Error(error.longMessage || error.message || 'Erro ao criar conta.')
+      }
+
+      // Send email verification code
+      const { error: sendError } = await signUp.verifications.sendEmailCode()
+      if (sendError) {
+        throw new Error(sendError.longMessage || sendError.message || 'Erro ao enviar código.')
       }
     },
-    [signIn, queryClient],
+    [signUp],
+  )
+
+  // Step 2: Verify email code, finalize sign-up, create DB records
+  const verifyEmailAndComplete = useCallback(
+    async (code: string, data: RegisterData) => {
+      if (!signUp) throw new Error('Clerk not loaded')
+
+      const { error: verifyError } = await signUp.verifications.verifyEmailCode({ code })
+      if (verifyError) {
+        throw new Error(verifyError.longMessage || verifyError.message || 'Código inválido.')
+      }
+
+      if (signUp.status === 'complete') {
+        await signUp.finalize()
+
+        // Create DB records via backend (now authenticated with Clerk JWT)
+        await apiFetch<{ message: string }>('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            role: data.role,
+            institutionIds: data.institutionIds,
+            subjectIds: data.subjectIds,
+          }),
+        })
+
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      }
+    },
+    [signUp, queryClient],
   )
 
   const logout = useCallback(async () => {
@@ -98,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [signOut, queryClient])
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, startRegister, verifyEmailAndComplete, logout }}>
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
