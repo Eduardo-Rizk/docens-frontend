@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, KeyRound, ArrowLeft } from "lucide-react";
+import { Mail, Lock, KeyRound, ArrowLeft, AlertTriangle } from "lucide-react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { toast } from "sonner";
 
@@ -47,8 +47,9 @@ export default function ResetPasswordPage() {
       }
       setStep("code");
       toast.success("Código enviado! Verifique seu email.");
-    } catch {
-      setError("Erro ao enviar código.");
+    } catch (err: unknown) {
+      const clerkErr = err as { errors?: { long_message?: string; message?: string }[] };
+      setError(clerkErr?.errors?.[0]?.long_message || clerkErr?.errors?.[0]?.message || "Erro ao enviar código.");
     } finally {
       setLoading(false);
     }
@@ -69,8 +70,9 @@ export default function ResetPasswordPage() {
       if (signIn.status === "needs_new_password") {
         setStep("newPassword");
       }
-    } catch {
-      setError("Código inválido ou expirado.");
+    } catch (err: unknown) {
+      const clerkErr = err as { errors?: { long_message?: string; message?: string }[] };
+      setError(clerkErr?.errors?.[0]?.long_message || clerkErr?.errors?.[0]?.message || "Código inválido ou expirado.");
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ export default function ResetPasswordPage() {
     try {
       const { error: submitError } = await signIn.resetPasswordEmailCode.submitPassword({ password });
       if (submitError) {
-        setError(submitError.longMessage || "Erro ao redefinir senha.");
+        setError(submitError.longMessage || submitError.message || "Erro ao redefinir senha.");
         return;
       }
       if (signIn.status === "complete") {
@@ -101,8 +103,11 @@ export default function ResetPasswordPage() {
         toast.success("Senha redefinida com sucesso!");
         router.push("/");
       }
-    } catch {
-      setError("Erro ao redefinir senha.");
+    } catch (err: unknown) {
+      // Clerk throws errors with { errors: [{ long_message, message }] }
+      const clerkErr = err as { errors?: { long_message?: string; message?: string }[] };
+      const msg = clerkErr?.errors?.[0]?.long_message || clerkErr?.errors?.[0]?.message || "Erro ao redefinir senha.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -165,7 +170,10 @@ export default function ResetPasswordPage() {
           </div>
 
           {error && (
-            <p className="text-[11px] text-red-400 text-center">{error}</p>
+            <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3.5 py-3 text-[12px] leading-relaxed text-red-300">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" />
+              <span>{error}</span>
+            </div>
           )}
 
           <button
@@ -210,7 +218,10 @@ export default function ResetPasswordPage() {
           </div>
 
           {error && (
-            <p className="text-[11px] text-red-400 text-center">{error}</p>
+            <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3.5 py-3 text-[12px] leading-relaxed text-red-300">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" />
+              <span>{error}</span>
+            </div>
           )}
 
           <button
