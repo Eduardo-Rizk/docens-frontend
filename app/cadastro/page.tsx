@@ -419,6 +419,9 @@ export default function RegisterPage() {
           )}
         </div>
 
+        {/* Clerk CAPTCHA */}
+        <div id="clerk-captcha" />
+
         {/* Divider */}
         <div className="h-px bg-border" />
 
