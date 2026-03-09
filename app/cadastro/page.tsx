@@ -7,6 +7,7 @@ import { AuthLayout } from "@/components/AuthLayout";
 import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
 import { useAuth } from "@/lib/auth-context";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
+import { toast } from "sonner";
 
 const input =
   "w-full bg-surface border border-border text-foreground placeholder:text-muted-foreground/40 px-4 py-3 text-sm font-medium focus:border-brand-accent focus:outline-none focus:ring-1 focus:ring-brand-accent/20 transition-all duration-200";
@@ -101,8 +102,10 @@ export default function RegisterPage() {
         subjectIds: role === "TEACHER" ? subjectIds : undefined,
       });
       router.push("/");
-    } catch {
-      // Error toast handled by auth context
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao criar conta.";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
