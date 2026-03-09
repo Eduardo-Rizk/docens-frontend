@@ -16,7 +16,7 @@ import {
 import { StatusPill } from "@/components/status-pill";
 import { BackLink } from "@/components/BackLink";
 import { useTeacherClassEvent, useUpdateClassEvent } from "@/lib/queries/teacher";
-import { useInstitutions, useInstitutionSubjects } from "@/lib/queries/institutions";
+import { useInstitutions, useInstitutionSubjectsFlat } from "@/lib/queries/institutions";
 import { formatLongDate, formatPrice, formatTime } from "@/lib/format";
 
 type PageProps = {
@@ -95,7 +95,7 @@ export default function TeacherClassEventDetailPage({ params }: PageProps) {
   // Data for selects (only fetched in DRAFT)
   const isDraftStatus = detail?.classEvent.publicationStatus === "DRAFT";
   const { data: institutions } = useInstitutions();
-  const { data: subjects } = useInstitutionSubjects(institutionId);
+  const { data: subjects } = useInstitutionSubjectsFlat(institutionId);
 
   // Sync form state when data loads or updates
   useEffect(() => {

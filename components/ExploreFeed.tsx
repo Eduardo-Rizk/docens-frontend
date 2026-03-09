@@ -4,8 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { useInstitutions } from "@/lib/queries/institutions";
+import { ArrowUpRight, Lock } from "lucide-react";
+import { useInstitutions, type Institution } from "@/lib/queries/institutions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 
@@ -87,41 +87,70 @@ export function ExploreFeed() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           <AnimatePresence mode="popLayout">
-            {filteredInstitutions.map((inst, i) => (
-              <motion.div
-                key={inst.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                layout
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-              >
-                <Link href={`/instituicoes/${inst.id}`}>
-                  <GlassCard className="h-full group flex flex-col justify-between">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="relative w-14 h-14 overflow-hidden bg-white border border-[#d1d5db] rounded-md flex items-center justify-center p-2">
-                        <Image
-                          src={inst.logoUrl}
-                          alt={inst.name}
-                          fill
-                          className="object-contain p-1.5"
-                        />
-                      </div>
-                      <div className="p-2 border border-[#d1d5db] text-muted-foreground group-hover:border-[#0f172a]/40 group-hover:text-[#0f172a] transition-colors rounded-md">
-                        <ArrowUpRight size={16} />
-                      </div>
-                    </div>
+            {filteredInstitutions.map((inst, i) => {
+              const disabled = inst.isEnabled === false;
 
-                    <div>
-                      <h3 className="text-lg font-sans font-bold mb-1 group-hover:text-[#0f172a] transition-colors">
-                        {inst.shortName}
-                      </h3>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider">{inst.city}</p>
-                    </div>
-                  </GlassCard>
-                </Link>
-              </motion.div>
-            ))}
+              return (
+                <motion.div
+                  key={inst.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  layout
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                >
+                  {disabled ? (
+                    <GlassCard className="h-full flex flex-col justify-between opacity-50 cursor-not-allowed">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="relative w-14 h-14 overflow-hidden bg-white border border-[#d1d5db] rounded-md flex items-center justify-center p-2 grayscale">
+                          <Image
+                            src={inst.logoUrl}
+                            alt={inst.name}
+                            fill
+                            className="object-contain p-1.5"
+                          />
+                        </div>
+                        <div className="p-2 border border-[#d1d5db] text-muted-foreground rounded-md">
+                          <Lock size={16} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-sans font-bold mb-1">
+                          {inst.shortName}
+                        </h3>
+                        <p className="text-xs text-muted-foreground/60">Em breve</p>
+                      </div>
+                    </GlassCard>
+                  ) : (
+                    <Link href={`/instituicoes/${inst.id}`}>
+                      <GlassCard className="h-full group flex flex-col justify-between">
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="relative w-14 h-14 overflow-hidden bg-white border border-[#d1d5db] rounded-md flex items-center justify-center p-2">
+                            <Image
+                              src={inst.logoUrl}
+                              alt={inst.name}
+                              fill
+                              className="object-contain p-1.5"
+                            />
+                          </div>
+                          <div className="p-2 border border-[#d1d5db] text-muted-foreground group-hover:border-[#0f172a]/40 group-hover:text-[#0f172a] transition-colors rounded-md">
+                            <ArrowUpRight size={16} />
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-sans font-bold mb-1 group-hover:text-[#0f172a] transition-colors">
+                            {inst.shortName}
+                          </h3>
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider">{inst.city}</p>
+                        </div>
+                      </GlassCard>
+                    </Link>
+                  )}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </motion.div>
       </div>

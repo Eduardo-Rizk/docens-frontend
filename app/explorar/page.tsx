@@ -4,8 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ArrowUpRight } from "lucide-react";
-import { useInstitutions } from "@/lib/queries/institutions";
+import { Search, ArrowUpRight, Lock } from "lucide-react";
+import { useInstitutions, type Institution } from "@/lib/queries/institutions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 
@@ -127,30 +127,7 @@ export default function ExplorePage() {
                   layout
                   transition={{ duration: 0.3 }}
                 >
-                  <Link href={`/instituicoes/${inst.id}`}>
-                    <GlassCard className="h-full group flex flex-col justify-between overflow-hidden relative min-h-[220px]">
-                      <div className="flex items-start justify-between mb-6">
-                        <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white p-2 shadow-inner">
-                          <Image
-                            src={inst.logoUrl}
-                            alt={inst.name}
-                            fill
-                            className="object-contain p-1"
-                          />
-                        </div>
-                        <div className="p-2 rounded-full border border-border text-muted-foreground group-hover:border-brand-accent group-hover:text-brand-accent transition-colors duration-200">
-                          <ArrowUpRight size={20} />
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-xl font-display font-bold mb-2 group-hover:text-brand-accent transition-colors duration-200">
-                          {inst.shortName}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-1">{inst.name}</p>
-                      </div>
-                    </GlassCard>
-                  </Link>
+                  <InstitutionCard inst={inst} />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -174,5 +151,63 @@ export default function ExplorePage() {
         )}
       </div>
     </div>
+  );
+}
+
+function InstitutionCard({ inst }: { inst: Institution }) {
+  const disabled = inst.isEnabled === false;
+
+  if (disabled) {
+    return (
+      <GlassCard className="h-full flex flex-col justify-between overflow-hidden relative min-h-[220px] opacity-50 cursor-not-allowed">
+        <div className="flex items-start justify-between mb-6">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white p-2 shadow-inner grayscale">
+            <Image
+              src={inst.logoUrl}
+              alt={inst.name}
+              fill
+              className="object-contain p-1"
+            />
+          </div>
+          <div className="p-2 rounded-full border border-border text-muted-foreground">
+            <Lock size={20} />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-display font-bold mb-2">
+            {inst.shortName}
+          </h3>
+          <p className="text-sm text-muted-foreground/60">Em breve</p>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  return (
+    <Link href={`/instituicoes/${inst.id}`}>
+      <GlassCard className="h-full group flex flex-col justify-between overflow-hidden relative min-h-[220px]">
+        <div className="flex items-start justify-between mb-6">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white p-2 shadow-inner">
+            <Image
+              src={inst.logoUrl}
+              alt={inst.name}
+              fill
+              className="object-contain p-1"
+            />
+          </div>
+          <div className="p-2 rounded-full border border-border text-muted-foreground group-hover:border-brand-accent group-hover:text-brand-accent transition-colors duration-200">
+            <ArrowUpRight size={20} />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-display font-bold mb-2 group-hover:text-brand-accent transition-colors duration-200">
+            {inst.shortName}
+          </h3>
+          <p className="text-sm text-muted-foreground line-clamp-1">{inst.name}</p>
+        </div>
+      </GlassCard>
+    </Link>
   );
 }

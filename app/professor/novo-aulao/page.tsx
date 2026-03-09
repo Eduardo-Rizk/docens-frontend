@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
-import { useInstitutions, useInstitutionSubjects } from "@/lib/queries/institutions";
+import { useInstitutions, useInstitutionSubjectsFlat } from "@/lib/queries/institutions";
 import { useCreateClassEvent } from "@/lib/queries/teacher";
 
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -29,7 +29,7 @@ export default function NovoAulaoPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [unlimitedCapacity, setUnlimitedCapacity] = useState(false);
   const { data: institutions } = useInstitutions();
-  const { data: subjects, isFetching: subjectsLoading } = useInstitutionSubjects(selectedInstitutionId);
+  const { data: subjects, isFetching: subjectsLoading } = useInstitutionSubjectsFlat(selectedInstitutionId);
   const createClassEvent = useCreateClassEvent();
   const router = useRouter();
 

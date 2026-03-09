@@ -2,163 +2,274 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { ChevronRight, Users } from "lucide-react";
-import { useInstitution, useInstitutionSubjects } from "@/lib/queries/institutions";
-import { SubjectIcon } from "@/components/SubjectIcon";
+import { ChevronRight, BookOpen, GraduationCap, Lock, Users } from "lucide-react";
+import { useInstitution, useCourses, useInstitutionSubjects } from "@/lib/queries/institutions";
 import { BackLink } from "@/components/BackLink";
 
 type PageProps = {
   params: Promise<{ institutionId: string }>;
 };
 
-const SUBJECT_COLORS: Record<string, string> = {
-  "sub-matematica": "from-cyan-500/20 to-cyan-500/5 border-cyan-500/30 hover:border-cyan-400/60",
-  "sub-calculo":    "from-cyan-500/20 to-cyan-500/5 border-cyan-500/30 hover:border-cyan-400/60",
-  "sub-fisica":     "from-blue-500/20 to-blue-500/5 border-blue-500/30 hover:border-blue-400/60",
-  "sub-quimica":    "from-purple-500/20 to-purple-500/5 border-purple-500/30 hover:border-purple-400/60",
-  "sub-biologia":   "from-emerald-500/20 to-emerald-500/5 border-emerald-500/30 hover:border-emerald-400/60",
-  "sub-historia":   "from-amber-500/20 to-amber-500/5 border-amber-500/30 hover:border-amber-400/60",
-  "sub-geografia":  "from-orange-500/20 to-orange-500/5 border-orange-500/30 hover:border-orange-400/60",
-  "sub-portugues":  "from-rose-500/20 to-rose-500/5 border-rose-500/30 hover:border-rose-400/60",
-  "sub-literatura": "from-pink-500/20 to-pink-500/5 border-pink-500/30 hover:border-pink-400/60",
-  "sub-redacao":    "from-rose-500/20 to-rose-500/5 border-rose-500/30 hover:border-rose-400/60",
-  "sub-direito":    "from-indigo-500/20 to-indigo-500/5 border-indigo-500/30 hover:border-indigo-400/60",
-  "sub-estatistica":"from-cyan-500/20 to-cyan-500/5 border-cyan-500/30 hover:border-cyan-400/60",
-  "sub-ingles":     "from-sky-500/20 to-sky-500/5 border-sky-500/30 hover:border-sky-400/60",
-};
-
-const SUBJECT_ICON_COLORS: Record<string, string> = {
-  "sub-matematica": "text-cyan-400",
-  "sub-calculo":    "text-cyan-400",
-  "sub-fisica":     "text-blue-400",
-  "sub-quimica":    "text-purple-400",
-  "sub-biologia":   "text-emerald-700",
-  "sub-historia":   "text-amber-700",
-  "sub-geografia":  "text-orange-400",
-  "sub-portugues":  "text-rose-400",
-  "sub-literatura": "text-pink-400",
-  "sub-redacao":    "text-rose-400",
-  "sub-direito":    "text-indigo-400",
-  "sub-estatistica":"text-cyan-400",
-  "sub-ingles":     "text-sky-400",
-};
-
 export default function InstitutionPage({ params }: PageProps) {
   const { institutionId } = use(params);
   const { data: institution, isLoading: loadingInst } = useInstitution(institutionId);
-  const { data: subjects, isLoading: loadingSubjects } = useInstitutionSubjects(institutionId);
 
-  if (loadingInst || loadingSubjects) {
-    return (
-      <div className="animate-pulse space-y-8 p-4">
-        <div className="h-4 w-24 bg-[#d1d5db] rounded-md" />
-        <div className="space-y-3">
-          <div className="h-6 w-32 bg-[#d1d5db] rounded-md" />
-          <div className="h-12 w-96 bg-[#d1d5db] rounded-md" />
-          <div className="h-4 w-80 bg-[#d1d5db] rounded-md" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-28 bg-[#d1d5db] rounded-md" />
-          ))}
-        </div>
-      </div>
-    );
+  if (loadingInst) {
+    return <LoadingSkeleton />;
   }
 
   if (!institution) {
     return <div className="p-8 text-muted-foreground">Instituicao nao encontrada.</div>;
   }
 
-  const subjectList = subjects ?? [];
+  if (!institution.isEnabled) {
+    return <DisabledView institution={institution} />;
+  }
+
+  if (institution.type === "UNIVERSITY") {
+    return <UniversityView institutionId={institutionId} institution={institution} />;
+  }
+
+  return <SchoolView institutionId={institutionId} institution={institution} />;
+}
+
+// --- University: shows courses ---
+
+function UniversityView({
+  institutionId,
+  institution,
+}: {
+  institutionId: string;
+  institution: { name: string; shortName: string; city: string; type: string };
+}) {
+  const { data, isLoading } = useCourses(institutionId);
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  const courses = data?.courses ?? [];
 
   return (
     <div className="space-y-14">
-      {/* Header */}
-      <header className="space-y-6">
-        <BackLink href="/explorar" label="Instituicoes" />
+      <Header
+        institution={institution}
+        description="Escolha o curso para explorar semestres e materias."
+      />
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="inline-block rounded-sm border border-border bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                {institution.type === "SCHOOL" ? "Ensino Medio" : "Graduacao"}
-              </span>
-              <span className="text-xs text-muted-foreground">{institution.city}</span>
-            </div>
-            <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
-              {institution.name}
-            </h1>
-            <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
-              Escolha a materia para ver os professores disponiveis e agendar sua proxima aula.
-            </p>
-          </div>
-        </div>
-
-        {/* Accent divider */}
-        <div className="h-px w-full bg-gradient-to-r from-brand-accent/40 via-brand-accent/10 to-transparent" />
-      </header>
-
-      {/* Subjects grid */}
-      {subjectList.length === 0 ? (
-        <div className="rounded-sm border border-border bg-surface p-12 text-center">
-          <p className="font-display text-2xl text-foreground">Nenhuma materia cadastrada</p>
-          <p className="mt-2 text-sm text-muted-foreground">Esta instituicao ainda nao possui materias disponiveis.</p>
-        </div>
+      {courses.length === 0 ? (
+        <EmptyState message="Nenhum curso cadastrado" sub="Esta instituicao ainda nao possui cursos disponiveis." />
       ) : (
         <section className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-6 w-1 bg-brand-accent" />
-              <h2 className="font-display text-2xl text-foreground">
-                Materias
-              </h2>
-            </div>
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs font-medium text-muted-foreground tabular-nums">
-              {subjectList.length} materias
-            </span>
-          </div>
+          <SectionTitle title="Cursos" count={`${courses.length} cursos`} />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {subjectList.map((subject) => {
-              const colorClass = SUBJECT_COLORS[subject.subjectId] ?? "from-gray-200/60 to-gray-200/20 border-gray-300/40 hover:border-gray-400/60";
-              const iconColorClass = SUBJECT_ICON_COLORS[subject.subjectId] ?? "text-gray-500";
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <Link
+                key={course.id}
+                href={`/instituicoes/${institutionId}/cursos/${course.id}`}
+                className="group relative flex flex-col gap-4 rounded-md border border-border bg-gradient-to-b from-cyan-500/10 to-cyan-500/0 p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/40 hover:shadow-lg hover:shadow-black/10"
+              >
+                <GraduationCap size={24} className="text-cyan-400" />
 
-              return (
-                <Link
-                  key={subject.subjectId}
-                  href={`/instituicoes/${institutionId}/materias/${subject.subjectId}`}
-                  className={`group relative flex flex-col gap-3 rounded-md border bg-gradient-to-b p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10 ${colorClass}`}
-                >
-                  <SubjectIcon name={undefined} size={22} className={iconColorClass} />
+                <div className="flex-1 space-y-1">
+                  <p className="font-display text-lg font-semibold leading-tight text-foreground">
+                    {course.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {course.semesterCount} semestres · {course.subjectCount} materias
+                  </p>
+                </div>
 
-                  <div className="flex-1">
-                    <p className="font-display text-base font-semibold leading-tight text-foreground">
-                      {subject.subjectName}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    {subject.teacherCount > 0 ? (
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <Users size={11} />
-                        {subject.teacherCount} professor{subject.teacherCount !== 1 ? "es" : ""}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground/60">Em breve</span>
-                    )}
-                    <ChevronRight
-                      size={14}
-                      className="text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground"
-                    />
-                  </div>
-                </Link>
-              );
-            })}
+                <ChevronRight
+                  size={14}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground"
+                />
+              </Link>
+            ))}
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+// --- School: shows years ---
+
+function SchoolView({
+  institutionId,
+  institution,
+}: {
+  institutionId: string;
+  institution: { name: string; shortName: string; city: string; type: string };
+}) {
+  const { data, isLoading } = useInstitutionSubjects(institutionId);
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  const years = data?.years ?? [];
+
+  return (
+    <div className="space-y-14">
+      <Header
+        institution={institution}
+        description="Escolha o ano para ver as materias disponiveis."
+      />
+
+      {years.length === 0 ? (
+        <EmptyState message="Nenhuma materia cadastrada" sub="Esta instituicao ainda nao possui materias disponiveis." />
+      ) : (
+        <section className="space-y-6">
+          <SectionTitle title="Anos" count={`${years.length} anos`} />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {years.map((year) => (
+              <Link
+                key={year.yearOrder}
+                href={`/instituicoes/${institutionId}/anos/${year.yearOrder}`}
+                className="group relative flex flex-col gap-4 rounded-md border border-border bg-gradient-to-b from-blue-500/10 to-blue-500/0 p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400/40 hover:shadow-lg hover:shadow-black/10"
+              >
+                <BookOpen size={24} className="text-blue-400" />
+
+                <div className="flex-1 space-y-1">
+                  <p className="font-display text-lg font-semibold leading-tight text-foreground">
+                    {year.yearLabel}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {year.subjects.length} materia{year.subjects.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+
+                <ChevronRight
+                  size={14}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+// --- Disabled institution (Inteli) ---
+
+function DisabledView({
+  institution,
+}: {
+  institution: { name: string; shortName: string; city: string; type: string };
+}) {
+  return (
+    <div className="space-y-14">
+      <header className="space-y-6">
+        <BackLink href="/explorar" label="Instituicoes" />
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <span className="inline-block rounded-sm border border-border bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {institution.type === "SCHOOL" ? "Ensino Medio" : "Graduacao"}
+            </span>
+            <span className="text-xs text-muted-foreground">{institution.city}</span>
+          </div>
+          <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
+            {institution.name}
+          </h1>
+        </div>
+
+        <div className="h-px w-full bg-gradient-to-r from-brand-accent/40 via-brand-accent/10 to-transparent" />
+      </header>
+
+      <div className="flex flex-col items-center gap-4 rounded-md border border-border bg-surface p-16 text-center">
+        <Lock size={48} className="text-muted-foreground/40" />
+        <p className="font-display text-2xl text-foreground">Em breve</p>
+        <p className="max-w-md text-sm text-muted-foreground">
+          Esta instituicao estara disponivel em breve. Fique ligado para novidades!
+        </p>
+        <Link
+          href="/explorar"
+          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-accent hover:opacity-70"
+        >
+          Explorar outras instituicoes
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// --- Shared sub-components ---
+
+function Header({
+  institution,
+  description,
+}: {
+  institution: { name: string; shortName: string; city: string; type: string };
+  description: string;
+}) {
+  return (
+    <header className="space-y-6">
+      <BackLink href="/explorar" label="Instituicoes" />
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <span className="inline-block rounded-sm border border-border bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {institution.type === "SCHOOL" ? "Ensino Medio" : "Graduacao"}
+            </span>
+            <span className="text-xs text-muted-foreground">{institution.city}</span>
+          </div>
+          <h1 className="font-display text-4xl leading-tight text-foreground sm:text-5xl">
+            {institution.name}
+          </h1>
+          <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      <div className="h-px w-full bg-gradient-to-r from-brand-accent/40 via-brand-accent/10 to-transparent" />
+    </header>
+  );
+}
+
+function SectionTitle({ title, count }: { title: string; count: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <div className="h-6 w-1 bg-brand-accent" />
+        <h2 className="font-display text-2xl text-foreground">{title}</h2>
+      </div>
+      <div className="flex-1 h-px bg-border" />
+      <span className="text-xs font-medium text-muted-foreground tabular-nums">{count}</span>
+    </div>
+  );
+}
+
+function EmptyState({ message, sub }: { message: string; sub: string }) {
+  return (
+    <div className="rounded-sm border border-border bg-surface p-12 text-center">
+      <p className="font-display text-2xl text-foreground">{message}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{sub}</p>
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="animate-pulse space-y-8 p-4">
+      <div className="h-4 w-24 bg-[#d1d5db] rounded-md" />
+      <div className="space-y-3">
+        <div className="h-6 w-32 bg-[#d1d5db] rounded-md" />
+        <div className="h-12 w-96 bg-[#d1d5db] rounded-md" />
+        <div className="h-4 w-80 bg-[#d1d5db] rounded-md" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-32 bg-[#d1d5db] rounded-md" />
+        ))}
+      </div>
     </div>
   );
 }
