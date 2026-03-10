@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useSignIn, useClerk, useUser } from "@clerk/nextjs";
+import { useSignIn, useUser } from "@clerk/nextjs";
 import { AuthLayout } from "@/components/AuthLayout";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -30,8 +30,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, setActive } = useSignIn();
-  const clerk = useClerk();
+  const { signIn } = useSignIn();
   const { isSignedIn } = useUser();
   const { user, needsRegistration } = useAuth();
   const router = useRouter();
@@ -49,32 +48,45 @@ export default function LoginPage() {
   }, [user, needsRegistration, router, redirect]);
 
   const handleGoogleLogin = useCallback(async () => {
-    if (!clerk.client) return;
+    if (!signIn) return;
     setGoogleLoading(true);
     try {
-      await clerk.client.signIn.authenticateWithRedirect({
+      await signIn.sso({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: redirect,
+        redirectUrl: redirect,
+        redirectCallbackUrl: "/sso-callback",
       });
     } catch {
       toast.error("Erro ao conectar com Google.");
       setGoogleLoading(false);
     }
-  }, [clerk, redirect]);
+  }, [signIn, redirect]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!signIn || !setActive) return;
+    if (!signIn) return;
     setLoading(true);
     try {
-      const result = await signIn.create({ identifier: email, password });
+      const { error } = await signIn.password({ identifier: email, password });
 
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        router.push(redirect);
+      if (error) {
+        const message = error.longMessage || error.message;
+        toast.error(message || "Email ou senha incorretos.");
+        return;
+      }
+
+      if (signIn.status === "complete") {
+        await signIn.finalize({
+          navigate: ({ decorateUrl }) => {
+            const url = decorateUrl(redirect);
+            if (url.startsWith("http")) {
+              window.location.href = url;
+            } else {
+              router.push(url);
+            }
+          },
+        });
       } else {
-        console.error("Sign-in not complete:", result.status);
         toast.error("Não foi possível completar o login.");
       }
     } catch (err: unknown) {

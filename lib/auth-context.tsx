@@ -119,7 +119,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (signUp.status === 'complete') {
-        await signUp.finalize()
+        await signUp.finalize({
+          navigate: ({ decorateUrl }) => {
+            const url = decorateUrl('/')
+            window.location.href = url.startsWith('http') ? url : `${window.location.origin}${url}`
+          },
+        })
 
         // Create DB records via backend (now authenticated with Clerk JWT)
         await apiFetch<{ message: string }>('/auth/register', {

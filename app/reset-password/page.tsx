@@ -33,23 +33,23 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError("");
     try {
-      // Create sign-in attempt with reset strategy
-      const createResult = await signIn.create({ identifier: email });
-      if (createResult.error) {
-        setError(createResult.error.longMessage || "Erro ao enviar código.");
+      // Identify the user first
+      const { error: createError } = await signIn.create({ identifier: email });
+      if (createError) {
+        setError(createError.longMessage || createError.message || "Erro ao enviar código.");
         return;
       }
       // Send the reset code
       const { error: sendError } = await signIn.resetPasswordEmailCode.sendCode();
       if (sendError) {
-        setError(sendError.longMessage || "Erro ao enviar código.");
+        setError(sendError.longMessage || sendError.message || "Erro ao enviar código.");
         return;
       }
       setStep("code");
       toast.success("Código enviado! Verifique seu email.");
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: { long_message?: string; message?: string }[] };
-      setError(clerkErr?.errors?.[0]?.long_message || clerkErr?.errors?.[0]?.message || "Erro ao enviar código.");
+      const clerkErr = err as { errors?: { longMessage?: string; message?: string }[] };
+      setError(clerkErr?.errors?.[0]?.longMessage || clerkErr?.errors?.[0]?.message || "Erro ao enviar código.");
     } finally {
       setLoading(false);
     }
@@ -71,8 +71,8 @@ export default function ResetPasswordPage() {
         setStep("newPassword");
       }
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: { long_message?: string; message?: string }[] };
-      setError(clerkErr?.errors?.[0]?.long_message || clerkErr?.errors?.[0]?.message || "Código inválido ou expirado.");
+      const clerkErr = err as { errors?: { longMessage?: string; message?: string }[] };
+      setError(clerkErr?.errors?.[0]?.longMessage || clerkErr?.errors?.[0]?.message || "Código inválido ou expirado.");
     } finally {
       setLoading(false);
     }
@@ -99,14 +99,22 @@ export default function ResetPasswordPage() {
         return;
       }
       if (signIn.status === "complete") {
-        await signIn.finalize();
         toast.success("Senha redefinida com sucesso!");
-        router.push("/");
+        await signIn.finalize({
+          navigate: ({ decorateUrl }) => {
+            const url = decorateUrl("/");
+            if (url.startsWith("http")) {
+              window.location.href = url;
+            } else {
+              router.push(url);
+            }
+          },
+        });
       }
     } catch (err: unknown) {
-      // Clerk throws errors with { errors: [{ long_message, message }] }
-      const clerkErr = err as { errors?: { long_message?: string; message?: string }[] };
-      const msg = clerkErr?.errors?.[0]?.long_message || clerkErr?.errors?.[0]?.message || "Erro ao redefinir senha.";
+      // Clerk throws errors with { errors: [{ longMessage, message }] }
+      const clerkErr = err as { errors?: { longMessage?: string; message?: string }[] };
+      const msg = clerkErr?.errors?.[0]?.longMessage || clerkErr?.errors?.[0]?.message || "Erro ao redefinir senha.";
       setError(msg);
     } finally {
       setLoading(false);

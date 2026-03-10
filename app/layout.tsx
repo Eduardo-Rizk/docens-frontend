@@ -32,15 +32,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="pt-BR" className={`${inter.className} ${spaceGrotesk.className}`}>
-        <body className="bg-background text-foreground antialiased font-sans">
+    <html lang="pt-BR" className={`${inter.className} ${spaceGrotesk.className}`}>
+      <body className="bg-background text-foreground antialiased font-sans">
+        <ClerkProvider>
           <Providers>
             <AppShell>{children}</AppShell>
             <ToastProvider />
           </Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

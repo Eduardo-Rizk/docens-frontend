@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { KeyRound, ArrowLeft } from "lucide-react";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { useSignUp, useUser } from "@clerk/nextjs";
 import { AuthLayout } from "@/components/AuthLayout";
 import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
 import { useAuth, type RegisterData } from "@/lib/auth-context";
@@ -63,7 +63,7 @@ export default function RegisterPage() {
   const formDataRef = useRef<RegisterData | null>(null);
 
   const { startRegister, verifyEmailAndComplete, completeOAuthRegister, user: backendUser } = useAuth();
-  const clerk = useClerk();
+  const { signUp } = useSignUp();
   const { user: clerkUser, isSignedIn } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,19 +82,19 @@ export default function RegisterPage() {
   }, [isOAuthMode, clerkUser]);
 
   const handleGoogleSignUp = useCallback(async () => {
-    if (!clerk.client) return;
+    if (!signUp) return;
     setGoogleLoading(true);
     try {
-      await clerk.client.signUp.authenticateWithRedirect({
+      await signUp.sso({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/cadastro?oauth=1",
+        redirectUrl: "/cadastro?oauth=1",
+        redirectCallbackUrl: "/sso-callback",
       });
     } catch {
       toast.error("Erro ao conectar com Google.");
       setGoogleLoading(false);
     }
-  }, [clerk]);
+  }, [signUp]);
 
   const initials = useMemo(() => {
     const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
