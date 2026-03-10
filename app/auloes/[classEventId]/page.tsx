@@ -113,14 +113,17 @@ export default function ClassEventPage({ params }: PageProps) {
           </div>
 
           {/* Teacher card */}
-          <div className="flex items-start gap-5 rounded-sm border border-border bg-surface p-5">
+          <Link
+            href={`/instituicoes/${institution.id}/professores/${teacher.id}`}
+            className="group flex items-center gap-5 rounded-sm border border-border bg-surface p-5 transition-colors hover:border-brand-accent/30 hover:bg-surface/80"
+          >
             <TeacherAvatar
               initials={teacherInitials}
               photoUrl={undefined}
               alt={teacherName}
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-cyan-500/30 bg-cyan-500/20 text-sm font-bold text-cyan-300"
             />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60">
                 Professor
               </p>
@@ -128,7 +131,11 @@ export default function ClassEventPage({ params }: PageProps) {
                 {teacherName}
               </p>
             </div>
-          </div>
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground/50 transition-colors group-hover:text-brand-accent">
+              Ver perfil
+              <ExternalLink size={12} />
+            </span>
+          </Link>
         </div>
 
         {/* Right: sidebar — changes based on student enrollment state */}

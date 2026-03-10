@@ -94,6 +94,21 @@ function dedupeSubjects(subjects: InstitutionSubject[]): InstitutionSubject[] {
   })
 }
 
+export interface SubjectMapping {
+  subjectId: string
+  courseId: string | null
+  courseName: string | null
+}
+
+// Map of institutionId -> SubjectMapping[] (fetched once, filtered on the client)
+export function useSubjectsByInstitution() {
+  return useQuery({
+    queryKey: ['subjects', 'by-institution'],
+    queryFn: () =>
+      apiFetch<Record<string, SubjectMapping[]>>('/subjects/by-institution'),
+  })
+}
+
 // --- Courses (universities) ---
 
 export interface CourseInfo {

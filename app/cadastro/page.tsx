@@ -4,9 +4,9 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { KeyRound, ArrowLeft } from "lucide-react";
-import { useSignUp, useUser } from "@clerk/nextjs";
+import { useSignUp, useUser, useClerk } from "@clerk/nextjs";
 import { AuthLayout } from "@/components/AuthLayout";
-import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
+import { useInstitutions, useSubjects, useSubjectsByInstitution } from "@/lib/queries/institutions";
 import { useAuth, type RegisterData } from "@/lib/auth-context";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
 import { toast } from "sonner";
@@ -65,10 +65,58 @@ export default function RegisterPage() {
   const { startRegister, verifyEmailAndComplete, completeOAuthRegister, user: backendUser } = useAuth();
   const { signUp } = useSignUp();
   const { user: clerkUser, isSignedIn } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: institutions } = useInstitutions();
-  const { data: subjects } = useSubjects();
+  const { data: allSubjects } = useSubjects();
+  const { data: subjectMap } = useSubjectsByInstitution();
+
+  // Filter subjects by selected institutions and group by course
+  const subjectGroups = useMemo(() => {
+    if (!allSubjects || !subjectMap || institutionIds.length === 0) return undefined;
+
+    const subjectById = new Map(allSubjects.map((s) => [s.id, s]));
+    const groups = new Map<string, { label: string; subjects: typeof allSubjects }>();
+
+    for (const instId of institutionIds) {
+      const mappings = subjectMap[instId] ?? [];
+      for (const m of mappings) {
+        const subject = subjectById.get(m.subjectId);
+        if (!subject) continue;
+
+        const groupKey = m.courseName ?? "_geral";
+        const groupLabel = m.courseName ?? "Geral";
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, { label: groupLabel, subjects: [] });
+        }
+        const group = groups.get(groupKey)!;
+        if (!group.subjects.some((s) => s.id === subject.id)) {
+          group.subjects.push(subject);
+        }
+      }
+    }
+
+    // Sort subjects within each group
+    for (const group of groups.values()) {
+      group.subjects.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Sort groups: "Geral" first, then alphabetical
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.label === "Geral") return -1;
+      if (b.label === "Geral") return 1;
+      return a.label.localeCompare(b.label);
+    });
+  }, [allSubjects, subjectMap, institutionIds]);
+
+  // Clear subject selections that no longer match available subjects
+  useEffect(() => {
+    if (!subjectGroups) return;
+    const validIds = new Set(subjectGroups.flatMap((g) => g.subjects.map((s) => s.id)));
+    setSubjectIds((prev) => prev.filter((id) => validIds.has(id)));
+  }, [subjectGroups]);
 
   // OAuth completion mode: signed in via Google but no backend record yet
   const isOAuthMode = searchParams.get("oauth") === "1" && isSignedIn && !backendUser;
@@ -198,6 +246,40 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // User signed in via Google but already has a backend account
+  const alreadyRegistered = searchParams.get("oauth") === "1" && isSignedIn && !!backendUser;
+
+  if (alreadyRegistered) {
+    return (
+      <AuthLayout
+        title="Conta encontrada"
+        subtitle="Já existe uma conta associada a este email do Google."
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground text-center leading-relaxed">
+            Você já possui uma conta no Docens. Faça login para continuar
+            ou cadastre-se com outro email.
+          </p>
+          <button
+            onClick={() => router.push("/")}
+            className="w-full bg-[#ea580c] text-white font-bold text-xs uppercase tracking-[0.14em] py-3.5 rounded-md hover:bg-[#c2410c] transition-all"
+          >
+            Entrar na minha conta
+          </button>
+          <button
+            onClick={async () => {
+              await signOut();
+              router.push("/cadastro");
+            }}
+            className="w-full border border-border text-foreground font-bold text-xs uppercase tracking-[0.14em] py-3.5 rounded-md hover:bg-surface/80 transition-all"
+          >
+            Cadastrar com outro email
+          </button>
+        </div>
+      </AuthLayout>
+    );
   }
 
   if (verifyStep) {
@@ -421,26 +503,40 @@ export default function RegisterPage() {
           <>
             <div>
               <label className={label}>Materias que voce leciona</label>
-              <div className="flex flex-wrap gap-2">
-                {(subjects ?? []).map((subject) => {
-                  const active = subjectIds.includes(subject.id);
-                  return (
-                    <button
-                      key={subject.id}
-                      type="button"
-                      onClick={() =>
-                        setSubjectIds((prev) => toggleId(prev, subject.id))
-                      }
-                      className={`border px-3 py-2 text-[11px] font-semibold transition-colors ${
-                        active
-                          ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
-                          : "border-border text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {subject.name}
-                    </button>
-                  );
-                })}
+              {(subjectGroups ?? []).length === 0 && institutionIds.length > 0 && (
+                <p className="text-[11px] text-muted-foreground/50">Carregando matérias...</p>
+              )}
+              <div className="space-y-3">
+                {(subjectGroups ?? []).map((group) => (
+                  <div key={group.label}>
+                    {subjectGroups!.length > 1 && (
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50 mb-1.5">
+                        {group.label}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {group.subjects.map((subject) => {
+                        const active = subjectIds.includes(subject.id);
+                        return (
+                          <button
+                            key={subject.id}
+                            type="button"
+                            onClick={() =>
+                              setSubjectIds((prev) => toggleId(prev, subject.id))
+                            }
+                            className={`border px-3 py-2 text-[11px] font-semibold transition-colors ${
+                              active
+                                ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                                : "border-border text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {subject.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

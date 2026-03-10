@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useInstitutions, useSubjects } from "@/lib/queries/institutions";
+import { useInstitutions, useSubjects, useSubjectsByInstitution } from "@/lib/queries/institutions";
 import { useUpdateTeacherProfile } from "@/lib/queries/teacher";
 import { TeacherAvatar } from "@/components/TeacherAvatar";
 
@@ -17,7 +17,8 @@ function toggleId(ids: string[], id: string) {
 export default function TeacherPerfilPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { data: institutions } = useInstitutions();
-  const { data: subjects } = useSubjects();
+  const { data: allSubjects } = useSubjects();
+  const { data: subjectMap } = useSubjectsByInstitution();
   const updateProfile = useUpdateTeacherProfile();
 
   const [bio, setBio] = useState("");
@@ -52,12 +53,59 @@ export default function TeacherPerfilPage() {
         .filter((shortName): shortName is string => Boolean(shortName)),
     [institutionIds, institutions],
   );
+  // Filter subjects by selected institutions and group by course
+  const subjectGroups = useMemo(() => {
+    if (!allSubjects || !subjectMap || institutionIds.length === 0) return undefined;
+
+    const subjectById = new Map(allSubjects.map((s) => [s.id, s]));
+    const groups = new Map<string, { label: string; subjects: typeof allSubjects }>();
+
+    for (const instId of institutionIds) {
+      const mappings = subjectMap[instId] ?? [];
+      for (const m of mappings) {
+        const subject = subjectById.get(m.subjectId);
+        if (!subject) continue;
+
+        const groupKey = m.courseName ?? "_geral";
+        const groupLabel = m.courseName ?? "Geral";
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, { label: groupLabel, subjects: [] });
+        }
+        const group = groups.get(groupKey)!;
+        if (!group.subjects.some((s) => s.id === subject.id)) {
+          group.subjects.push(subject);
+        }
+      }
+    }
+
+    for (const group of groups.values()) {
+      group.subjects.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.label === "Geral") return -1;
+      if (b.label === "Geral") return 1;
+      return a.label.localeCompare(b.label);
+    });
+  }, [allSubjects, subjectMap, institutionIds]);
+
+  // Clear stale subject selections when institutions change
+  useEffect(() => {
+    if (!subjectGroups) return;
+    const validIds = new Set(subjectGroups.flatMap((g) => g.subjects.map((s) => s.id)));
+    setSubjectIds((prev) => {
+      const filtered = prev.filter((id) => validIds.has(id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [subjectGroups]);
+
   const selectedSubjectNames = useMemo(
     () =>
       subjectIds
-        .map((id) => (subjects ?? []).find(s => s.id === id)?.name)
+        .map((id) => (allSubjects ?? []).find(s => s.id === id)?.name)
         .filter((name): name is string => Boolean(name)),
-    [subjectIds, subjects],
+    [subjectIds, allSubjects],
   );
 
   function handlePhotoChange(file: File | undefined) {
@@ -193,24 +241,38 @@ export default function TeacherPerfilPage() {
             <label className="block text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
               Matérias
             </label>
-            <div className="flex flex-wrap gap-2">
-              {(subjects ?? []).map((subject) => {
-                const active = subjectIds.includes(subject.id);
-                return (
-                  <button
-                    key={subject.id}
-                    type="button"
-                    onClick={() => setSubjectIds((prev) => toggleId(prev, subject.id))}
-                    className={`border px-3 py-2 text-[11px] font-semibold transition-colors ${
-                      active
-                        ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
-                        : "border-border text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {subject.name}
-                  </button>
-                );
-              })}
+            {institutionIds.length === 0 && (
+              <p className="text-[11px] text-muted-foreground/50">Selecione uma instituição para ver as matérias.</p>
+            )}
+            <div className="space-y-3">
+              {(subjectGroups ?? []).map((group) => (
+                <div key={group.label}>
+                  {subjectGroups!.length > 1 && (
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/50 mb-1.5">
+                      {group.label}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {group.subjects.map((subject) => {
+                      const active = subjectIds.includes(subject.id);
+                      return (
+                        <button
+                          key={subject.id}
+                          type="button"
+                          onClick={() => setSubjectIds((prev) => toggleId(prev, subject.id))}
+                          className={`border px-3 py-2 text-[11px] font-semibold transition-colors ${
+                            active
+                              ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                              : "border-border text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {subject.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
